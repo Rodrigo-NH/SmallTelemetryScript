@@ -32,6 +32,8 @@ Att. indicator scale: from 90 to 180. Larger values will smooth real angle. e.g.
 Msg log: Will log messages to SD card in ../logs directory  
 Sounds: Enable/Disable script sounds. Actully just two sound files (relative to error messages)  
 
+Script in action -> https://www.youtube.com/watch?v=NbgJKfTsYeM
+
 ## Contribution
 
 If you test it and able to report: Open an issue reporting which radio (and system EdgeTX or OpenTX and version) you tested it and results so it can be added to the list. If you don't have a github account you can send me a direct message -> https://discuss.ardupilot.org/u/rodrigonh76/summary  
