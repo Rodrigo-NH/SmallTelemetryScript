@@ -79,7 +79,7 @@ function shared.run(event)
 
     -- local scaleFactor = 90 -- Value must be between 90 and 180
     local pitch = telemetry.pitch
-    local roll = telemetry.roll * -1 -- oops
+    local roll = telemetry.roll * -1 -- oops (fix wrong, inverted, assumption about roll signal +/- )
 
     if pitch >= scaleFactor / 2 then
       pitch = scaleFactor / 2 - 1
@@ -89,9 +89,19 @@ function shared.run(event)
     local retangleYstart = 0
     local retangleWidth = 45
     local retangleHeight = 39
-    local crossweight = 2
+    local crossweight = 70
+
     local halfX = retangleWidth / 2
     local halfY = retangleHeight / 2
+
+    local creference = 0
+    if retangleWidth < retangleHeight then
+      creference = retangleWidth
+    else
+      creference = retangleHeight
+    end
+    crossweight = creference / 2 * (crossweight / 100)
+
     local pitchFactor = retangleHeight / scaleFactor
     local pitchWeight = pitchFactor * pitch + halfY
     local pitchR = retangleHeight - pitchWeight
@@ -124,10 +134,10 @@ function shared.run(event)
       SX2 = (retangleXstart + retangleWidth) - delta
     end
 
-    SX1 = math.floor(SX1)
-    SY1 = math.floor(SY1)
-    SX2 = math.floor(SX2)
-    SY2 = math.floor(SY2)
+    -- SX1 = math.floor(SX1)
+    -- SY1 = math.floor(SY1)
+    -- SX2 = math.floor(SX2)
+    -- SY2 = math.floor(SY2)
 
     coordsX = { SX1, SX2 }
     coordsY = { SY1, SY2 }
@@ -158,15 +168,32 @@ function shared.run(event)
       lcd.drawRectangle(retangleXstart, retangleYstart, retangleWidth, retangleHeight, SOLID)
     end
 
-    lcd.drawLine((retangleXstart + halfX) - crossweight, (retangleYstart + halfY) - crossweight,
-      (retangleXstart + halfX) + crossweight, (retangleYstart + halfY) + crossweight, SOLID, ftype)
-    lcd.drawLine((retangleXstart + halfX) - crossweight, (retangleYstart + halfY) + crossweight,
-      (retangleXstart + halfX) + crossweight, (retangleYstart + halfY) - crossweight, SOLID, ftype)
-
     for i = 1, 2 do
       local kk = i + 1
       lcd.drawLine(retangleXstart + halfX - 1, retangleYstart + pitchWeight, coordsX[i], coordsY[i], DOTTED, ftype)
     end
+
+    -- A. indicator fixed roll reference
+    roll = roll * -1     -- (de)oops
+    roll = roll + 90     -- Initial reference, perpendicular to roll
+    local cdts = { { (roll + 120), crossweight }, { (roll - 120), crossweight } }
+    local centerY = retangleYstart + halfY
+    local centerX = retangleXstart + halfX
+    local Tpoints = {}
+    for i = 1, #cdts
+    do
+      local xtan = math.cos(math.rad(cdts[i][1]))
+      xtan = xtan * cdts[i][2]
+      local ytan = math.sin(math.rad(cdts[i][1]))
+      ytan = ytan * cdts[i][2]
+      local destPointX = retangleXstart + halfX - xtan
+      local destPointY = centerY - ytan
+      lcd.drawLine(centerX, centerY, destPointX, destPointY, SOLID, ftype)
+      Tpoints[i] = { destPointX, destPointY }
+    end
+    lcd.drawLine(Tpoints[1][1], Tpoints[1][2], Tpoints[2][1], Tpoints[2][2], SOLID, ftype)
+
+
   end
 
   --ARROW HOME DIST
