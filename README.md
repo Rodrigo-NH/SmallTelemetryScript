@@ -13,9 +13,12 @@ Click 'Code' button then 'Download ZIP'. Enter (cd into) downloaded SD directory
 
 ## Use
 
+Rottary switch or Page button to change screens.
+
 Screen containing basic info and basic graphical elements (Attitude indicator; variometer; telemetry heartbeat and home arrow) 'h:' and 'y:' near home arrow are home distance and yaw respectively. Emergency to Error messages will be replicated at bottom of screen.  
 The graphical elements are coded in a way making easy to customize position and size. Can be used to develop menu options to create/change screens.  
 Pressing ENTER from this screen will load the configuration menu.  
+Pressing and holding 'TELE' from this screen will display messages screen temporarily  
 
 ![Main screen](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/menu1.JPG)  
 
@@ -28,11 +31,12 @@ Cell voltage: Display total battery voltage or cell voltage
 Number of cells: To be able to calculate the above option correctly  
 Variometer clip val: The (V. speed) value that will make variometer cursor to clip top or bottom  
 Att. indicator scale: from 90 to 180. Larger values will smooth real angle. e.g. 180 will make the horizon line near the top/limit if drone is nose down.  
+Msg log: Will log messages to SD card in ../logs directory  
+Sounds: Enable/Disable script sounds. Actully just two sound files (relative to error messages) 
 
 ![Config menu](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/cfg.JPG)  
 
-Msg log: Will log messages to SD card in ../logs directory  
-Sounds: Enable/Disable script sounds. Actully just two sound files (relative to error messages)  
+ 
 
 
 
