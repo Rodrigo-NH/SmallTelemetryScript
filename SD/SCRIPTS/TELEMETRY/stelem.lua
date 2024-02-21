@@ -148,16 +148,6 @@ local function crossfirePop()
 				shared.MessagesIndex = 9
 			end
 
-			local playsounds = shared.GetConfig(6)
-			local soundfile = ""
-			if playsounds == "True" then
-				if severity < 6 and severity > 3 then
-					soundfile = "alarm2.wav"
-				elseif severity < 4 then
-					soundfile = "alarm1.wav"
-				end
-			end
-
 			if severity < 6 then
 				shared.Alertmessages[2] = shared.Alertmessages[1]
 				shared.Alertmessages[1] = tmessage
@@ -167,13 +157,23 @@ local function crossfirePop()
 				io.write(msglogfile, mavSeverity[severity] .. "= " .. tmessage .. "\n")
 			end
 
+			local soundfile = ""
+			if severity < 6 and severity > 3 then
+				soundfile = "alarm2.wav"
+			elseif severity < 4 then
+				soundfile = "alarm1.wav"
+			end
+
 			if string.match(tmessage, "GPS Glitch") then
 				soundfile = "glitch.wav"
 			elseif string.match(tmessage, "Glitch cleared") then
 				soundfile = "gCleared.wav"
 			end
-			playFile(soundsDir .. soundfile)
-
+			
+			local playsounds = shared.GetConfig(6)
+			if playsounds == "True" then
+				playFile(soundsDir .. soundfile)
+			end
 
 		elseif #data >= 8 and data[1] == 0xF2 then
 			-- passthrough array
