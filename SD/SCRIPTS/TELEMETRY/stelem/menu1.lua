@@ -8,18 +8,13 @@ function shared.run(event)
   gfx.vario(123, 0, 5, 40, shared)
   gfx.attitudeIndicator(78, 0, 45, 39, 70, shared)
   gfx.homeArrow(9, 17, 9, shared)
+  gfx.armedIndicator(79, 31, 1, shared)
 
   local xalign = 31
   lcd.drawText(xalign, 0, "mAh: " .. tostring(shared.tel.batt1mah), SMLSIZE)
   lcd.drawText(xalign, 7, "Alt: " .. tostring(shared.tel.homeAlt), SMLSIZE)
-
-  local cellvolt = shared.GetConfig(1)
-  local dividefactor = 1
-  if cellvolt == "True" then
-    dividefactor = tonumber(shared.GetConfig(2))
-  end
-
-  local battvolt = tostring(shared.tel.batt1volt / dividefactor)
+  
+  local battvolt = tostring(shared.tel.batt1volt)
   battvolt = string.format("%.2f", battvolt)
 
   lcd.drawText(xalign, 14, "Volt: " .. battvolt, SMLSIZE)

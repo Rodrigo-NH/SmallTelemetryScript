@@ -2,6 +2,7 @@ local shared = { }
 shared.Screens = {
 	"/SCRIPTS/TELEMETRY/stelem/menu1.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu2.lua",
+	"/SCRIPTS/TELEMETRY/stelem/menu3.lua",
 	-- "/SCRIPTS/TELEMETRY/stelem/mappingtest.lua",
 }
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/cfmenu.lua"
@@ -31,6 +32,7 @@ local mavSeverity = {
 }
 
 shared.Heartbeat = 0
+shared.CurrentScreen = 1
 
 shared.tel = { }
 shared.tel.flightMode = 0
@@ -52,6 +54,7 @@ shared.tel.homeAngle = 0
 shared.tel.vSpeed = 0
 shared.tel.gpsStatus = 0
 shared.tel.RSSI = 0
+shared.tel.statusArmed = 0
 
 shared.Messages = {}
 shared.Alertmessages = { "", "" }
@@ -82,6 +85,7 @@ local function processTelemetry(appId, value, now)
 			(bit32.extract(value, 19, 6) * (bit32.extract(value, 25, 1) == 1 and -1 or 1) * 1.58)) -- signed throttle [-63,63] -> [-100,100]
 																							  -- IMU temperature: 0 means temp =< 19°,63 means temp => 82°
 		shared.tel.imuTemp = bit32.extract(value, 26, 6) + 19                                  -- C°
+		shared.tel.statusArmed = bit32.extract(value,8,1)
 	elseif appId == 0x5002 then                                                               -- GPS STATUS
 		shared.tel.numSats = bit32.extract(value, 0, 4)
 		shared.tel.gpsHdopC = bit32.extract(value, 7, 7) * (10 ^ bit32.extract(value, 6, 1))   -- dm
@@ -90,6 +94,12 @@ local function processTelemetry(appId, value, now)
 		shared.tel.gpsStatus = bit32.extract(value, 4, 2) + bit32.extract(value, 14, 2)
 	elseif appId == 0x5003 then                                                               -- BATT
 		shared.tel.batt1volt = bit32.extract(value, 0, 9) / 10                                 -- dV
+			local cellvolt = shared.GetConfig(1)
+			local dividefactor = 1
+			if cellvolt == "True" then
+				dividefactor = tonumber(shared.GetConfig(2))
+			end
+			shared.tel.batt1volt = shared.tel.batt1volt / dividefactor
 		shared.tel.batt1current = (bit32.extract(value, 10, 7) * (10 ^ bit32.extract(value, 9, 1))) / 10 --dA
 		shared.tel.batt1mah = bit32.extract(value, 17, 15)
 	elseif appId == 0x5004 then                                                               -- HOME
@@ -139,11 +149,12 @@ local function crossfirePop()
 			end
 
 			local playsounds = shared.GetConfig(6)
+			local soundfile = ""
 			if playsounds == "True" then
 				if severity < 6 and severity > 3 then
-					playFile(soundsDir .. "alarm2.wav")
+					soundfile = "alarm2.wav"
 				elseif severity < 4 then
-					playFile(soundsDir .. "alarm1.wav")
+					soundfile = "alarm1.wav"
 				end
 			end
 
@@ -155,6 +166,14 @@ local function crossfirePop()
 			if msglogfilename ~= "" then
 				io.write(msglogfile, mavSeverity[severity] .. "= " .. tmessage .. "\n")
 			end
+
+			if string.match(tmessage, "GPS Glitch") then
+				soundfile = "glitch.wav"
+			elseif string.match(tmessage, "Glitch cleared") then
+				soundfile = "gCleared.wav"
+			end
+			playFile(soundsDir .. soundfile)
+
 
 		elseif #data >= 8 and data[1] == 0xF2 then
 			-- passthrough array
@@ -183,7 +202,7 @@ function shared.MessagesLog()
 end
 
 function shared.LoadScreen(screenref)
-	shared.CurrentScreen = 0
+	-- shared.CurrentScreen = 0
 	local chunk = loadScript(screenref)
 	chunk(shared)
 end
@@ -261,10 +280,9 @@ end
 
 local function init()
 	stelemLoadSettings()
-  shared.CurrentScreen = 1
-  shared.CycleScreen(0)
-  shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
-  shared.MessagesLog()
+	shared.CycleScreen(0)
+	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
+	shared.MessagesLog()
 end
 
 local function run(event)

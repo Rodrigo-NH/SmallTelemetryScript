@@ -187,12 +187,23 @@ local function heartbeat(rx1, ry1, rw, rh, sh)
     lcd.drawLine(x3, y3, x4, y4, SOLID, FORCE)
   end
 
- 
-
+local function armedIndicator(x, y, size, sh)
+  -- size = 1 or 2
+  local shared = sh
+  local ftype = SMLSIZE
+  if shared.tel.statusArmed == 1 then
+    -- local tsize = SMLSIZE
+    if size == 2 then
+      ftype = 0
+    end
+    lcd.drawText(x, y, "A", ftype + INVERS)
+  end
+end
 
   return { 
     heartbeat=heartbeat,
     vario=vario,
     attitudeIndicator=attitudeIndicator,
     homeArrow=homeArrow,
+    armedIndicator=armedIndicator
  }

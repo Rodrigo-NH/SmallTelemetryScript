@@ -1,3 +1,4 @@
+-- For development/tests
 -- https://doc.open-tx.org/opentx-2-3-lua-reference-guide/part_iii_-_opentx_lua_api_reference/constants/key_events
 local shared = ...
 
