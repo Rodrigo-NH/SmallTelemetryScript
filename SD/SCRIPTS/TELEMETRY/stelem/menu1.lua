@@ -1,5 +1,5 @@
 local shared = ...
-local gfx = shared.stelemLoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
 
 function shared.run(event)
   lcd.clear()
@@ -10,42 +10,44 @@ function shared.run(event)
   gfx.homeArrow(9, 17, 9, shared)
 
   local xalign = 31
-  lcd.drawText(xalign, 0, "mAh: " .. tostring(shared.stelemTelem.batt1mah), SMLSIZE)
-  lcd.drawText(xalign, 7, "Alt: " .. tostring(shared.stelemTelem.homeAlt), SMLSIZE)
+  lcd.drawText(xalign, 0, "mAh: " .. tostring(shared.tel.batt1mah), SMLSIZE)
+  lcd.drawText(xalign, 7, "Alt: " .. tostring(shared.tel.homeAlt), SMLSIZE)
 
-  local cellvolt = shared.stelemGetConfig(1)
+  local cellvolt = shared.GetConfig(1)
   local dividefactor = 1
   if cellvolt == "True" then
-    dividefactor = tonumber(shared.stelemGetConfig(2))
+    dividefactor = tonumber(shared.GetConfig(2))
   end
 
-  local battvolt = tostring(shared.stelemTelem.batt1volt / dividefactor)
+  local battvolt = tostring(shared.tel.batt1volt / dividefactor)
   battvolt = string.format("%.2f", battvolt)
 
   lcd.drawText(xalign, 14, "Volt: " .. battvolt, SMLSIZE)
-  lcd.drawText(xalign, 21, "Hdop: " .. tostring(shared.stelemTelem.gpsHdopC / 10), SMLSIZE)
-  lcd.drawText(xalign, 28, "Nsat: " .. tostring(shared.stelemTelem.numSats), SMLSIZE)
+  lcd.drawText(xalign, 21, "Hdop: " .. tostring(shared.tel.gpsHdopC / 10), SMLSIZE)
+  lcd.drawText(xalign, 28, "Nsat: " .. tostring(shared.tel.numSats), SMLSIZE)
 
-  lcd.drawText(80, 40, shared.stelemFrame.flightModes[shared.stelemTelem.flightMode], SMLSIZE)
+  lcd.drawText(80, 40, shared.Frame.flightModes[shared.tel.flightMode], SMLSIZE)
   lcd.drawFilledRectangle(78, 39, 50, 10, GREY_DEFAULT)
   -- -- ALERT MESSAGES --
-  lcd.drawText(0, 50, shared.stelemAlertmessages[2], SMLSIZE)
-  lcd.drawText(0, 57, shared.stelemAlertmessages[1], SMLSIZE)
+  lcd.drawText(0, 50, shared.Alertmessages[2], SMLSIZE)
+  lcd.drawText(0, 57, shared.Alertmessages[1], SMLSIZE)
   -- -- ALERT MESSAGES --
-  lcd.drawText(xalign, 35, "Throt: " .. tostring(shared.stelemTelem.throttle), SMLSIZE)
-  lcd.drawText(xalign, 42, "RSSI: " .. tostring(shared.stelemTelem.RSSI), SMLSIZE)
-  lcd.drawText(0, 28, "y:" .. tostring(shared.stelemTelem.yaw), SMLSIZE)
-  lcd.drawText(0, 0, "h:" .. tostring(shared.stelemTelem.homeDist), SMLSIZE)
+  lcd.drawText(xalign, 35, "Throt: " .. tostring(shared.tel.throttle), SMLSIZE)
+  lcd.drawText(xalign, 42, "RSSI: " .. tostring(shared.tel.RSSI), SMLSIZE)
+  lcd.drawText(0, 28, "y:" .. tostring(shared.tel.yaw), SMLSIZE)
+  lcd.drawText(0, 0, "h:" .. tostring(shared.tel.homeDist), SMLSIZE)
   lcd.drawLine(0, 48, 77, 48, SOLID, FORCE)
 
 
 
-  if event == EVT_VIRTUAL_NEXT then
-    shared.stelemCycleScreen(1)
-  elseif event == EVT_VIRTUAL_PREV then
-    shared.stelemCycleScreen(-1)
+  if event == EVT_VIRTUAL_NEXT or event == 99 then
+    shared.CycleScreen(1)
+  elseif event == EVT_VIRTUAL_PREV or event == 98 then
+    shared.CycleScreen(-1)
   elseif event == EVT_VIRTUAL_ENTER then
-    shared.stelemLoadScreen(shared.stelemConfigmenu)
+    shared.LoadScreen(shared.Configmenu)
+  elseif event == 70 then -- Hold Page button
+    shared.LoadScreen(shared.Screens[2])
   end
 end
 

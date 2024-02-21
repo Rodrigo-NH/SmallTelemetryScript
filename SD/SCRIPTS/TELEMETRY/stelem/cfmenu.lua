@@ -9,14 +9,14 @@ function shared.run(event)
   local function getSettings()
     lcd.clear()
     local linen = 0
-    for i = 1, #shared.stelemMenuItems
+    for i = 1, #shared.MenuItems
     do
-      local confline = shared.stelemMenuItems[i]
+      local confline = shared.MenuItems[i]
       for j = 1, #confline
       do
-        local seloption = tonumber(shared.stelemMenuItems[i][2])
-        local actvalue = shared.stelemMenuItems[i][seloption + 2]
-        lcd.drawText(0, linen, tostring(shared.stelemMenuItems[i][1]) .. ": ", SMLSIZE)
+        local seloption = tonumber(shared.MenuItems[i][2])
+        local actvalue = shared.MenuItems[i][seloption + 2]
+        lcd.drawText(0, linen, tostring(shared.MenuItems[i][1]) .. ": ", SMLSIZE)
 
         if i == optchoice then
           if isediting == 0 then
@@ -31,7 +31,7 @@ function shared.run(event)
       linen = linen + 7
     end
 
-    if optchoice == #shared.stelemMenuItems + 1 then
+    if optchoice == #shared.MenuItems + 1 then
       lcd.drawText(0, 57, "Save and Exit", SMLSIZE + INVERS)
     else
       lcd.drawText(0, 57, "Save and Exit", SMLSIZE)
@@ -43,14 +43,14 @@ function shared.run(event)
   if event == EVT_VIRTUAL_NEXT then
     if isediting == 0 then
       optchoice = optchoice + 1
-      if optchoice > #shared.stelemMenuItems + 1 then
+      if optchoice > #shared.MenuItems + 1 then
         optchoice = optchoice - 1
       end
     else
-      local seloption = tonumber(shared.stelemMenuItems[optchoice][2]) + 1
-      local optiondata = shared.stelemMenuItems[optchoice][seloption + 2]
+      local seloption = tonumber(shared.MenuItems[optchoice][2]) + 1
+      local optiondata = shared.MenuItems[optchoice][seloption + 2]
       if optiondata ~= nil then
-        shared.stelemMenuItems[optchoice][2] = seloption
+        shared.MenuItems[optchoice][2] = seloption
       end
     end
 
@@ -61,17 +61,17 @@ function shared.run(event)
         optchoice = optchoice + 1
       end
     else
-      local seloption = tonumber(shared.stelemMenuItems[optchoice][2]) - 1
+      local seloption = tonumber(shared.MenuItems[optchoice][2]) - 1
       if seloption > 0 then
-        shared.stelemMenuItems[optchoice][2] = seloption
+        shared.MenuItems[optchoice][2] = seloption
       end
     end
 
   elseif event == EVT_VIRTUAL_ENTER then
-    if optchoice == #shared.stelemMenuItems + 1 then
-      shared.stelemCycleScreen(1)
-      shared.stelemSaveSettings()
-      shared.stelemMessagesLog()
+    if optchoice == #shared.MenuItems + 1 then
+      shared.CycleScreen(1)
+      shared.SaveSettings()
+      shared.MessagesLog()
     else
       if isediting == 0 then
         isediting = 1

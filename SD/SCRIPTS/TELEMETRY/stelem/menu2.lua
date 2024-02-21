@@ -1,25 +1,30 @@
 local shared = ...
-ardumessagesCursor = 1
+local temporaryvis = 0
 
 function shared.run(event)
   lcd.clear()
   local line = 0
-	for i=1,#shared.stelemMessages
+	for i=1,#shared.Messages
 	do
-		lcd.drawText(0, line, tostring(shared.stelemMessages[i]), SMLSIZE)
+		lcd.drawText(0, line, tostring(shared.Messages[i]), SMLSIZE)
 		line = line + 8
 	end
-  
-  -- https://doc.open-tx.org/opentx-2-3-lua-reference-guide/part_iii_-_opentx_lua_api_reference/constants/key_events
-  if event == EVT_VIRTUAL_NEXT then
-    shared.stelemCycleScreen(1)
-  elseif event == EVT_VIRTUAL_PREV then
-    shared.stelemCycleScreen(-1)
-  elseif event == EVT_VIRTUAL_ENTER then
 
-    shared.stelemMessages = { }
-	ardumessagesCursor = 1
-	shared.stelemMessagesIndex = 1
+  if event == 70 then
+    temporaryvis = 1
   end
+
+  if event ~= 70 and temporaryvis == 1 then
+    shared.LoadScreen(shared.Screens[1])
+  end  
+
+    if event == EVT_VIRTUAL_NEXT or event == 99 then
+      shared.CycleScreen(1)
+    elseif event == EVT_VIRTUAL_PREV or event == 98 then
+      shared.CycleScreen(-1)
+    elseif event == EVT_VIRTUAL_ENTER then
+      shared.Messages = { }
+      shared.MessagesIndex = 1
+    end
 end
 

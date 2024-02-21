@@ -1,7 +1,7 @@
 local function heartbeat(rx1, ry1, rw, rh, sh)
     local shared = sh
     local hstep = rw / 3
-    hbc = shared.stelemHeartbeat
+    hbc = shared.Heartbeat
     if hbc == 0 then
       lcd.drawFilledRectangle(rx1, ry1, hstep + 1, rh, GREY_DEFAULT)
     end
@@ -18,10 +18,10 @@ local function heartbeat(rx1, ry1, rw, rh, sh)
 
   local function vario(rx1, ry1, rw, rh, sh)
     local shared = sh
-    local vSClipUp = tonumber(shared.stelemGetConfig(3))
+    local vSClipUp = tonumber(shared.GetConfig(3))
     local vSClipDo = vSClipUp * -1
 
-    local vSpeed = shared.stelemTelem.vSpeed
+    local vSpeed = shared.tel.vSpeed
 
     local screenH = rh
     local clipUpf = (screenH / 2) / (vSClipUp)
@@ -55,11 +55,11 @@ local function heartbeat(rx1, ry1, rw, rh, sh)
   local function attitudeIndicator(retangleXstart, retangleYstart, retangleWidth, retangleHeight, crossweight, sh)
     local shared = sh
     -- Get scale value from configurations
-    local scaleFactor = tonumber(shared.stelemGetConfig(4))
+    local scaleFactor = tonumber(shared.GetConfig(4))
 
     -- local scaleFactor = 90 -- Value must be between 90 and 180
-    local pitch = shared.stelemTelem.pitch
-    local roll = shared.stelemTelem.roll * -1 -- oops (fix wrong, inverted, assumption about roll signal +/- )
+    local pitch = shared.tel.pitch
+    local roll = shared.tel.roll * -1 -- oops (fix wrong, inverted, assumption about roll signal +/- )
 
     if pitch >= scaleFactor / 2 then
       pitch = scaleFactor / 2 - 1
@@ -170,7 +170,7 @@ local function heartbeat(rx1, ry1, rw, rh, sh)
 
   local function homeArrow(x, y, size, sh)
     local shared = sh
-    local angle = shared.stelemTelem.homeAngle - shared.stelemTelem.yaw   
+    local angle = shared.tel.homeAngle - shared.tel.yaw   
 
     local x1 = x + size * math.cos(math.rad(angle - 90))
     local y1 = y + size * math.sin(math.rad(angle - 90))
