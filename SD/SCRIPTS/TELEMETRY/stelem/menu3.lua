@@ -4,10 +4,10 @@ local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
 function shared.run(event)
   lcd.clear()
 
-  gfx.attitudeIndicator(0, 4, 39, 35, 40, shared)
+  gfx.attitudeIndicator(5, 4, 34, 34, 50, shared)
   gfx.vario(0, 5, 5, 34, shared)
   gfx.heartbeat(1, 0, 38, 5, shared)
-  gfx.homeArrow(20, 11, 5, shared)
+  gfx.homeArrow(22, 11, 5, shared)
   gfx.armedIndicator(6, 31, 1, shared)
 
   local xalign = 41

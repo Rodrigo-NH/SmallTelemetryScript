@@ -27,11 +27,11 @@ local mc1 = 0
 local mc2 = 0
 
 lcd.clear()
-lcd.drawText(0, 0, "Loading M. planner TXT file", SMLSIZE + INVERS)
 
     -- Extract data from mission planner TXT file
   while ctr ~= nil
   do
+    lcd.drawText(0, 0, "Loading M. planner TXT file", SMLSIZE + INVERS)
     local mc = collectgarbage("count")
     if mc > mc1 then
         mc1 = mc
@@ -73,24 +73,19 @@ local zoom = 10
 
 function shared.run(event)
   lcd.clear()
-  lcd.drawText(0, 0, mc1, SMLSIZE + INVERS)
+  lcd.drawText(0, 0, mc1, SMLSIZE)
   mc2 = string.format("%.3f", mc2)
-  lcd.drawText(0, 57, mc2, SMLSIZE + INVERS)
+  lcd.drawText(0, 57, mc2, SMLSIZE)
   lcd.drawText(95, 0, "Map WIP", SMLSIZE + INVERS)
-  lcd.drawText(0, 30, "Rottary", SMLSIZE + INVERS)
-  lcd.drawText(0, 38, "zoom", SMLSIZE + INVERS)
-  lcd.drawText(83, 57, "ENTER exit", SMLSIZE + INVERS)
+  lcd.drawText(0, 30, "Rottary", SMLSIZE)
+  lcd.drawText(0, 38, "zoom", SMLSIZE)
+  lcd.drawText(83, 57, "ENTER exit", SMLSIZE)
 
 
     -- "Canvas" = Screen size
     local destW = 128
     local destH = 64
 
-    local transX = { }
-    local transY = { }
-
-    local xcoords = { }
-    local ycoords = { }
     local Xmax = 0
     local Xmin = 999999999999999
     local Ymax = 0
@@ -104,8 +99,8 @@ function shared.run(event)
         local latRad = coords[t][5] * math.pi / 180
         local mercN = math.log(math.tan((math.pi/4)+(latRad/2)))
         local ty = (destH/2)-(destW*mercN/(2*math.pi))        
-        transX[t] = tx
-        transY[t] = ty
+        coords[t][7] = ty
+        coords[t][8] = tx
 
         -- Sort max min values
         if tx > Xmax then
@@ -146,34 +141,42 @@ function shared.run(event)
 
     -- Translate to screen
     ctr = 0
-    for t=1, #transX
+    for t=1, #coords
     do
-        local destX = math.floor(((transX[t] - Xmin) * baseScale) + centerX)
-        local destY = math.floor(((transY[t] - Ymin) * baseScale) + centerY)
+        local destX = math.floor(((coords[t][8] - Xmin) * baseScale) + centerX)
+        local destY = math.floor(((coords[t][7] - Ymin) * baseScale) + centerY)
         ctr = ctr + 8
-        xcoords[t] = destX
-        ycoords[t] = destY
+        coords[t][10] = destX
+        coords[t][9] = destY
     end
 
-    for g=1, #xcoords
+    for g = 1, #coords
     do
-        if xcoords[g] < 129 and ycoords[g] < 65 then
-            lcd.drawPoint( xcoords[g], ycoords[g], FORCE)
+        local wpn = coords[g][1] -- waypoint number
+        local x1 = coords[g][10]
+        local y1 = coords[g][9]
+
+        if x1 <= destW and y1 <= destH and x1 > 0 and y1 > 0 then
+            lcd.drawRectangle(x1 - 1, y1 - 1, 3, 3, INVERS)
+            if g > 1 then
+                local wpn2 = coords[g - 1][1]
+                local x2 = coords[g - 1][10]
+                local y2 = coords[g - 1][9]
+                if wpn - wpn2 == 1 and x2 > 0 and y2 > 0 then
+                    lcd.drawLine(coords[g][10], coords[g][9], coords[g - 1][10], coords[g - 1][9], DOTTED, FORCE)
+                end
+            end
         end
     end
 
 
-
   if event == EVT_VIRTUAL_NEXT or event == 99 then
     zoom = zoom + 8
-    if zoom > 66 then
-        zoom = 66
+    if zoom > destH then
+        zoom = destH
     end
   elseif event == EVT_VIRTUAL_PREV or event == 98 then
     zoom = zoom - 8
-    if zoom < -62 then
-        zoom = -62
-    end
   elseif event == EVT_VIRTUAL_ENTER then
     shared.LoadScreen(shared.Screens[1])
   end
