@@ -3,6 +3,7 @@ shared.Screens = {
 	"/SCRIPTS/TELEMETRY/stelem/menu1.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu2.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu3.lua",
+	"/SCRIPTS/TELEMETRY/stelem/menu4.lua",
 	-- "/SCRIPTS/TELEMETRY/stelem/mappingtest.lua",
 }
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/cfmenu.lua"
@@ -18,6 +19,7 @@ shared.MenuItems = {
 	{ "Att. indicator scale",1,"90","100","110","120","130","140","150","160","170","180" },
 	{ "Msg log",1,"False","True" },
 	{ "Sounds",2,"False","True" },
+	{ "Enable map test",1,"False","True"},
 }
 
 local mavSeverity = {
@@ -55,6 +57,10 @@ shared.tel.vSpeed = 0
 shared.tel.gpsStatus = 0
 shared.tel.RSSI = 0
 shared.tel.statusArmed = 0
+shared.tel.wpNumber = 0
+shared.tel.wpDistance = 0
+shared.tel.wpXTError = 0
+shared.tel.wpBearing = 0
 
 shared.Messages = {}
 shared.Alertmessages = { "", "" }
@@ -102,6 +108,10 @@ local function processTelemetry(appId, value, now)
 			shared.tel.batt1volt = shared.tel.batt1volt / dividefactor
 		shared.tel.batt1current = (bit32.extract(value, 10, 7) * (10 ^ bit32.extract(value, 9, 1))) / 10 --dA
 		shared.tel.batt1mah = bit32.extract(value, 17, 15)
+	elseif appId == 0x500D then -- WAYPOINTS @1Hz
+		shared.tel.wpNumber = bit32.extract(value,0,11) -- wp index
+		shared.tel.wpDistance = bit32.extract(value,13,10) * (10^bit32.extract(value,11,2)) -- meters
+		shared.tel.wpBearing = bit32.extract(value, 23,  7) * 3
 	elseif appId == 0x5004 then                                                               -- HOME
 		shared.tel.homeAlt = bit32.extract(value, 14, 10) * (10 ^ bit32.extract(value, 12, 2)) * 0.1 *
 			(bit32.extract(value, 24, 1) == 1 and -1 or 1)                                    --m
@@ -249,14 +259,30 @@ end
 
 
 function shared.CycleScreen(delta)
-  shared.CurrentScreen = shared.CurrentScreen + delta
-  if shared.CurrentScreen > #shared.Screens then
-    shared.CurrentScreen = 1
-  elseif shared.CurrentScreen < 1 then
-    shared.CurrentScreen = #shared.Screens
-  end
-  local chunk = loadScript(shared.Screens[shared.CurrentScreen])
-  chunk(shared)
+	shared.CurrentScreen = shared.CurrentScreen + delta
+	-- Temporary
+	local maptest = shared.GetConfig(7)
+	if maptest == "False" and shared.CurrentScreen == 4 then
+		shared.CurrentScreen = 1
+	end
+	-- Temporary
+	if shared.CurrentScreen > #shared.Screens then
+		shared.CurrentScreen = 1
+	elseif shared.CurrentScreen < 1 then
+		-- Temporary
+		if maptest == "True" and shared.CurrentScreen < 1 then
+			shared.CurrentScreen = 4
+		else
+			shared.CurrentScreen = 3
+		-- 	shared.CurrentScreen = #shared.Screens
+		end
+		-- Temporary
+	end
+
+	shared.LoadScreen(shared.Screens[shared.CurrentScreen])
+
+	--   local chunk = loadScript(shared.Screens[shared.CurrentScreen])
+	--   chunk(shared)
 end
 
 local function background()

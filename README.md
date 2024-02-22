@@ -36,8 +36,12 @@ Sounds: Enable/Disable script sounds. Actully just two sound files (relative to 
 
 ![Config menu](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/cfg.JPG)  
 
+ ## Current
+ Testing a map screen (WIP). You can enable this test in settings.  
+ Sample "/SCRIPTS/TELEMETRY/stelem/mission.txt" included  
+ You can load your own Mission Planner TXT file to "/SCRIPTS/TELEMETRY/stelem/mission.txt" (override the current file)  
  
-
+![Map test](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/mapwip.jpg)
 
 
 ## Contribution

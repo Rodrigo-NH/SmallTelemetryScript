@@ -69,7 +69,8 @@ function shared.run(event)
 
   elseif event == EVT_VIRTUAL_ENTER then
     if optchoice == #shared.MenuItems + 1 then
-      shared.CycleScreen(1)
+      -- shared.CycleScreen(1)
+      shared.LoadScreen(shared.Screens[1])
       shared.SaveSettings()
       shared.MessagesLog()
     else
