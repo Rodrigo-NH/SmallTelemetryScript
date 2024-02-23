@@ -1,11 +1,13 @@
 local shared = { }
-shared.Screens = {
+local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
+
+shared.Screens = {	
 	"/SCRIPTS/TELEMETRY/stelem/menu1.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu2.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu3.lua",
 	"/SCRIPTS/TELEMETRY/stelem/menu4.lua",
-	-- "/SCRIPTS/TELEMETRY/stelem/mappingtest.lua",
 }
+
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/cfmenu.lua"
 local configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
 local messagesLogDir = "/SCRIPTS/TELEMETRY/stelem/logs/"
@@ -20,6 +22,7 @@ shared.MenuItems = {
 	{ "Msg log",1,"False","True" },
 	{ "Sounds",2,"False","True" },
 	{ "Enable map test",1,"False","True"},
+	{ "Splash Screen",2,"False","True"}
 }
 
 local mavSeverity = {
@@ -309,6 +312,9 @@ local function init()
 	shared.CycleScreen(0)
 	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
 	shared.MessagesLog()
+	if shared.GetConfig(8) == "True" then
+		shared.LoadScreen(splashscreen)
+	end
 end
 
 local function run(event)
