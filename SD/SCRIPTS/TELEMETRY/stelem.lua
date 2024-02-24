@@ -1,14 +1,16 @@
 local shared = { }
 local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
 
-shared.Screens = {	
-	"/SCRIPTS/TELEMETRY/stelem/menu1.lua",
-	"/SCRIPTS/TELEMETRY/stelem/menu2.lua",
-	"/SCRIPTS/TELEMETRY/stelem/menu3.lua",
-	"/SCRIPTS/TELEMETRY/stelem/menu4.lua",
+shared.Screens = {
+	"/SCRIPTS/TELEMETRY/stelem/sc_t1.lua",
+	"/SCRIPTS/TELEMETRY/stelem/sc_t2.lua",
+	"/SCRIPTS/TELEMETRY/stelem/sc_t3.lua",
+	"/SCRIPTS/TELEMETRY/stelem/sc_map.lua",
+	-- "/SCRIPTS/TELEMETRY/stelem/menu5.lua",
+	
 }
 
-shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/cfmenu.lua"
+shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/sc_conf.lua"
 local configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
 local messagesLogDir = "/SCRIPTS/TELEMETRY/stelem/logs/"
 local soundsDir = "/SOUNDS/en/SCRIPTS/STELEM/"
@@ -38,6 +40,7 @@ local mavSeverity = {
 
 shared.Heartbeat = 0
 shared.CurrentScreen = 1
+local splashactive = true
 
 shared.tel = { }
 shared.tel.flightMode = 0
@@ -64,6 +67,8 @@ shared.tel.wpNumber = 0
 shared.tel.wpDistance = 0
 shared.tel.wpXTError = 0
 shared.tel.wpBearing = 0
+shared.tel.lat = 0
+shared.tel.lon = 0
 
 shared.Messages = {}
 shared.Alertmessages = { "", "" }
@@ -124,7 +129,15 @@ local function processTelemetry(appId, value, now)
 		shared.tel.baroAlt = bit32.extract(value, 17, 10) * (10 ^ bit32.extract(value, 15, 2)) * 0.1 *
 			(bit32.extract(value, 27, 1) == 1 and -1 or 1)	
 	end
+
 	shared.tel.RSSI = getRSSI()
+	local gpsId  = getFieldInfo("GPS") and getFieldInfo("GPS").id or nil;
+	if getValue(gpsId) ~= 0 then
+		local gps = getValue(gpsId)
+		shared.tel.lat = gps.lat
+		shared.tel.lon = gps.lon
+	end
+
 end
 
 local function crossfirePop()
@@ -263,29 +276,21 @@ end
 
 function shared.CycleScreen(delta)
 	shared.CurrentScreen = shared.CurrentScreen + delta
-	-- Temporary
 	local maptest = shared.GetConfig(7)
-	if maptest == "False" and shared.CurrentScreen == 4 then
-		shared.CurrentScreen = 1
-	end
-	-- Temporary
+
 	if shared.CurrentScreen > #shared.Screens then
 		shared.CurrentScreen = 1
 	elseif shared.CurrentScreen < 1 then
-		-- Temporary
-		if maptest == "True" and shared.CurrentScreen < 1 then
-			shared.CurrentScreen = 4
-		else
-			shared.CurrentScreen = 3
-		-- 	shared.CurrentScreen = #shared.Screens
-		end
-		-- Temporary
+		shared.CurrentScreen = #shared.Screens
 	end
-
+	-- temporary
+	if maptest == "False" and shared.CurrentScreen == #shared.Screens and delta == 1 then
+		shared.CurrentScreen = 1
+	elseif maptest == "False" and shared.CurrentScreen == #shared.Screens and delta == -1 then
+		shared.CurrentScreen = #shared.Screens - 1
+	end
+	-- temporary
 	shared.LoadScreen(shared.Screens[shared.CurrentScreen])
-
-	--   local chunk = loadScript(shared.Screens[shared.CurrentScreen])
-	--   chunk(shared)
 end
 
 local function background()
@@ -312,13 +317,15 @@ local function init()
 	shared.CycleScreen(0)
 	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
 	shared.MessagesLog()
-	if shared.GetConfig(8) == "True" then
-		shared.LoadScreen(splashscreen)
-	end
+
 end
 
 local function run(event)
-  shared.run(event)
+	if shared.GetConfig(8) == "True" and splashactive then
+		shared.LoadScreen(splashscreen)
+		splashactive = false
+	end
+	shared.run(event)
 end
 
 return { run = run, init = init, background=background }

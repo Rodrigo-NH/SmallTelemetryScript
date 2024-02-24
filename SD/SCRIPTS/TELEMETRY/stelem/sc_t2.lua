@@ -25,6 +25,13 @@ function shared.run(event)
   lcd.drawText(xalign, 56, "Hdop:" .. tostring(shared.tel.gpsHdopC / 10), SMLSIZE)
   lcd.drawLine(70, 0, 70, 64, SOLID, FORCE)
 
+  xalign = 72
+  lcd.drawText(xalign, 0, "GPS Lat/Lon" , SMLSIZE)
+  lcd.drawText(xalign, 8,  tostring(shared.tel.lat), SMLSIZE)
+  lcd.drawText(xalign, 16, tostring(shared.tel.lon), SMLSIZE)
+  lcd.drawLine(xalign-1, 23, 128, 23, SOLID, FORCE)
+
+
   lcd.drawText(71, 57, shared.Frame.flightModes[shared.tel.flightMode], SMLSIZE + INVERS )
 
   if event == EVT_VIRTUAL_NEXT or event == 99 then
@@ -34,7 +41,7 @@ function shared.run(event)
   elseif event == EVT_VIRTUAL_ENTER then
     shared.LoadScreen(shared.Configmenu)
   elseif event == 70 then -- Hold Page button
-    shared.LoadScreen(shared.Screens[2])
+    shared.LoadScreen(shared.Screens[3])
   end
 end
 

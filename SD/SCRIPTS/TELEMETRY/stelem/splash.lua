@@ -290,7 +290,7 @@ if zoom < -1700 then
     zoom = -1700
 end
 
-if getTime() - splashwait > 650 then
+if getTime() - splashwait > 450 then
     shared.LoadScreen(shared.Screens[1])
 end
 

@@ -15,7 +15,7 @@ function shared.run(event)
   end
 
   if event ~= 70 and temporaryvis == 1 then
-    shared.LoadScreen(shared.Screens[1])
+    shared.LoadScreen(shared.Screens[shared.CurrentScreen])
   end  
 
     if event == EVT_VIRTUAL_NEXT or event == 99 then

@@ -42,7 +42,7 @@ function shared.run(event)
   elseif event == EVT_VIRTUAL_ENTER then
     shared.LoadScreen(shared.Configmenu)
   elseif event == 70 then -- Hold Page button
-    shared.LoadScreen(shared.Screens[2])
+    shared.LoadScreen(shared.Screens[3])
   end
 end
 

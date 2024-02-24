@@ -178,6 +178,7 @@ function shared.run(event)
   elseif event == EVT_VIRTUAL_PREV or event == 98 then
     zoom = zoom - 8
   elseif event == EVT_VIRTUAL_ENTER then
+    shared.CurrentScreen = 1
     shared.LoadScreen(shared.Screens[1])
   end
 end
