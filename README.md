@@ -1,6 +1,6 @@
 This is a spin-off of **Yaapu Telemetry Script and Widget** aimed to low capacity (processor/ram) radios using Ardupilot's CRSF passthrough. Target screen is 128x64 but it may work with other screen sizes. Target radio is TX12 but may work with other radios. Target system is EdgeTX but may work in OpenTX. Target vehicle is copter. Script is functional but this is a WIP. I added my initial needs for now.  
   
-  Script in action -> https://www.youtube.com/watch?v=ypQiE1C456g
+  Script in action -> https://www.youtube.com/watch?v=ewNGq5c7erU
 
 ## Rationale
 I had some important (blocking) issues trying to use Yaapu Telemetry on TX12. Tried to work around the issues (https://github.com/yaapu/FrskyTelemetryScript/issues/208) without success. Moreover, graphical elements seemed too 'laggy' with freezes the times it (somewhat) worked. It's probably that actual screens (and code as whole) are too heavy for a small radio like TX12.

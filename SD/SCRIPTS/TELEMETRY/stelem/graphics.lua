@@ -1,3 +1,6 @@
+-- local shared = ...
+-- local bitmaps = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/bitmaps.lua")
+
 local function heartbeat(rx1, ry1, rw, rh, sh)
     local shared = sh
     local hstep = rw / 3
@@ -200,10 +203,111 @@ local function armedIndicator(x, y, size, sh)
   end
 end
 
+
+
+local function drawPattern(x, y, pattern)
+  local sx = x
+  local sy = y
+
+  for line=1, #pattern
+    do
+      local sline = pattern[line]      
+      for column=1, #sline
+      do
+        if sline[column] == 1 then
+          lcd.drawPoint(sx, sy)
+        end        
+        sx = sx + 1
+      end
+      sx = x
+      sy = sy + 1
+    end
+end
+
+
+local function drawSmallNumbers(x, y, number)
+  local numbers = {
+    {
+        { 0, 1, 0, 0,  },
+        { 1, 0, 1, 0,  },
+        { 1, 0, 1, 0,  },
+        { 0, 1, 0, 0,  }
+    },
+    {
+        { 0, 1, 0,  },
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 0, 1, 0,  }
+    },
+    {
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 1, 0, 0,  },
+        { 1, 1, 0,  }
+    },
+    {
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 1, 1, 0,  }
+    },
+    {
+        { 1, 0, 1, 0,  },
+        { 1, 1, 1, 0,  },
+        { 0, 0, 1, 0,  },
+        { 0, 0, 1, 0,  },
+    },
+    {
+        { 1, 1, 0,  },
+        { 1, 0, 0,  },
+        { 0, 1, 0,  },
+        { 1, 1, 0,  }
+    },
+    {
+        { 1, 1, 0,  },
+        { 1, 0, 0,  },
+        { 1, 1, 0,  },
+        { 1, 1, 0,  }
+    },
+    {
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 0, 1, 0,  },
+        { 0, 1, 0,  }
+    },
+    {
+        { 0, 1, 0, 0,  },
+        { 1, 0, 1, 0,  },
+        { 0, 1, 0, 0,  },
+        { 1, 0, 1, 0,  },
+        { 0, 1, 0, 0,  },
+    },
+    {
+        { 1, 1, 0,  },
+        { 1, 1, 0,  },
+        { 0, 1, 0,  },
+        { 0, 1, 0,  },
+    }
+  }
+  local str = tostring(number)
+  for t = 1, #str
+  do
+    local alg = tonumber(string.sub(str, t, t)) + 1
+    local rec = #numbers[alg][1]
+    drawPattern(x, y, numbers[alg])
+    x = x + rec
+  end
+end
+
+
+
   return { 
     heartbeat=heartbeat,
     vario=vario,
     attitudeIndicator=attitudeIndicator,
     homeArrow=homeArrow,
-    armedIndicator=armedIndicator
+    armedIndicator=armedIndicator,
+    drawPattern=drawPattern,
+    drawSmallNumbers=drawSmallNumbers
  }

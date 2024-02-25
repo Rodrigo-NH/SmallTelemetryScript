@@ -4,10 +4,9 @@ local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
 shared.Screens = {
 	"/SCRIPTS/TELEMETRY/stelem/sc_t1.lua",
 	"/SCRIPTS/TELEMETRY/stelem/sc_t2.lua",
+	-- "/SCRIPTS/TELEMETRY/stelem/novo.lua",
 	"/SCRIPTS/TELEMETRY/stelem/sc_t3.lua",
-	"/SCRIPTS/TELEMETRY/stelem/sc_map.lua",
-	-- "/SCRIPTS/TELEMETRY/stelem/menu5.lua",
-	
+	"/SCRIPTS/TELEMETRY/stelem/sc_map.lua",	
 }
 
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/sc_conf.lua"
@@ -69,6 +68,9 @@ shared.tel.wpXTError = 0
 shared.tel.wpBearing = 0
 shared.tel.lat = 0
 shared.tel.lon = 0
+
+-- Last know home location lat/long
+shared.homeLocation = { 0, 0 }
 
 shared.Messages = {}
 shared.Alertmessages = { "", "" }
@@ -183,6 +185,10 @@ local function crossfirePop()
 				io.write(msglogfile, mavSeverity[severity] .. "= " .. tmessage .. "\n")
 			end
 
+			if string.match(tmessage, "origin set") then
+				shared.homeLocation = {shared.tel.lat, shared.tel.lon}
+			end	
+			
 			local soundfile = ""
 			if severity < 6 and severity > 3 then
 				soundfile = "alarm2.wav"
