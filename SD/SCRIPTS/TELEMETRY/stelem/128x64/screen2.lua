@@ -40,8 +40,10 @@ function shared.run(event)
     shared.CycleScreen(-1)
   elseif event == EVT_VIRTUAL_ENTER then
     shared.LoadScreen(shared.Configmenu)
-  elseif event == 70 then -- Hold Page button
-    shared.LoadScreen(shared.Screens[3])
+    -- elseif event == 70 then -- Hold Page button
+    --   shared.LoadScreen(shared.Screens[3])
+  elseif event == 102 then
+    shared.LoadScreen(shared.Mapscreen)
   end
 end
 

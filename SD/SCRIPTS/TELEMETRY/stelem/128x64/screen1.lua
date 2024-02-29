@@ -1,5 +1,6 @@
 local shared = ...
 local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+local opt = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
 
 function shared.run(event)
   lcd.clear()
@@ -41,8 +42,17 @@ function shared.run(event)
     shared.CycleScreen(-1)
   elseif event == EVT_VIRTUAL_ENTER then
     shared.LoadScreen(shared.Configmenu)
-  elseif event == 70 then -- Hold Page button
-    shared.LoadScreen(shared.Screens[3])
+  -- elseif event == 70 then -- Hold Page button
+  --   shared.LoadScreen(shared.Screens[3])
+  elseif event == 102 then
+    if shared.telecount == false then -- needs debouncing from script first load
+      shared.telecount = true
+    else
+      shared.LoadScreen(shared.Mapscreen)
+    end
+    
   end
+
+
 end
 

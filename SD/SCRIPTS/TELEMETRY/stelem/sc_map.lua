@@ -21,10 +21,34 @@ local ctr = 0
 local ctr3 = 1
 local coords = { }
 
+local thisopt = {
+    { "Center on", 2, 
+        {
+            { "Copter - not sticky", 1 },
+            { "Copter - sticky", 1 },
+            { "Home", 1 },
+            { "Center map", 1 },
+            { "WayPoint", 2, 
+                { 
+                    { "WP1", 1 },
+                    { "WP2", 1 },
+                    { "WP3", 1 },
+                    { "WP4", 1 },
+
+                }
+            },
+        }
+    },
+    { "Map options", 1 },
+}
 
 -- memory monitor
 local mc1 = 0
 local mc2 = 0
+
+local usrindex = 1
+local usroptmap = {  }
+local RTNflag = true
 
 lcd.clear()
 
@@ -91,11 +115,12 @@ function shared.run(event)
     -- lcd.drawText(0, 0, mc1, SMLSIZE)
     mc2 = string.format("%.3f", mc2)
     -- lcd.drawText(0, 57, mc2, SMLSIZE)
-    lcd.drawText(95, 0, "Map WIP", SMLSIZE + INVERS)
+    lcd.drawText(90, 0, "Map WIP!", SMLSIZE + INVERS)
+    
     -- lcd.drawText(0, 30, "Rottary", SMLSIZE)
     -- lcd.drawText(0, 38, "zoom", SMLSIZE)
-    lcd.drawText(0, 50, "ENTER", SMLSIZE)
-    lcd.drawText(0, 57, "exit", SMLSIZE)
+    -- lcd.drawText(0, 50, "ENTER", SMLSIZE)
+    -- lcd.drawText(0, 57, "exit", SMLSIZE)
 
     if shared.tel.lat ~= nil then
         coords[#coords][5] = shared.tel.lat
@@ -249,17 +274,47 @@ function shared.run(event)
 
     end
 
+    if #usroptmap ~= 0 then
+        local fag = gfx.expandOption(usroptmap, thisopt, event, usrindex)
+        usroptmap = fag[3]
+        usrindex = fag[4]
+        if fag[1] ~= nil then
+            print(fag[1]) -- Command type
+            print(fag[2]) -- Command data
 
-  if event == EVT_VIRTUAL_NEXT or event == 99 then
-    zoom = zoom + 8
-    if zoom > destH then
-        zoom = destH
+            if fag[1] == 3 then
+                for e = 1, #fag[2]
+                do
+                    print(fag[2][e])
+                end
+            end
+        end
+    elseif event == EVT_VIRTUAL_ENTER then
+        if #usroptmap == 0 then
+            usroptmap = { 1 }
+            RTNflag = false
+        end
+
     end
-  elseif event == EVT_VIRTUAL_PREV or event == 98 then
-    zoom = zoom - 8
-  elseif event == EVT_VIRTUAL_ENTER then
-    shared.CurrentScreen = 1
-    shared.LoadScreen(shared.Screens[1])
-  end
+
+
+    if event == EVT_VIRTUAL_NEXT or event == 99 then
+        if #usroptmap == 0 then
+            zoom = zoom + 8
+            if zoom > destH then
+                zoom = destH
+            end
+        end
+    elseif event == EVT_VIRTUAL_PREV or event == 98 then
+        if #usroptmap == 0 then
+            zoom = zoom - 8
+        end
+    elseif event == 96 then
+        if #usroptmap == 0 and RTNflag == false then
+            RTNflag = true
+        elseif RTNflag == true then
+            shared.LoadScreen(shared.Screens[shared.CurrentScreen])
+        end
+    end
 end
 

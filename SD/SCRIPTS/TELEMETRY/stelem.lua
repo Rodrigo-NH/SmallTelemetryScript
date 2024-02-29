@@ -1,29 +1,40 @@
 local shared = { }
 local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
 
-shared.Screens = {
-	"/SCRIPTS/TELEMETRY/stelem/sc_t1.lua",
-	"/SCRIPTS/TELEMETRY/stelem/sc_t2.lua",
-	-- "/SCRIPTS/TELEMETRY/stelem/novo.lua",
-	"/SCRIPTS/TELEMETRY/stelem/sc_t3.lua",
-	"/SCRIPTS/TELEMETRY/stelem/sc_map.lua",	
-}
+-- shared.Screens = {
+-- 	"/SCRIPTS/TELEMETRY/stelem/sc_t1.lua",
+-- 	"/SCRIPTS/TELEMETRY/stelem/sc_t2.lua",
+-- 	"/SCRIPTS/TELEMETRY/stelem/sc_t3.lua",
+-- }
 
+shared.Mapscreen = "/SCRIPTS/TELEMETRY/stelem/sc_map.lua"
+shared.telecount = false
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/sc_conf.lua"
-local configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
+shared.configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
 local messagesLogDir = "/SCRIPTS/TELEMETRY/stelem/logs/"
 local soundsDir = "/SOUNDS/en/SCRIPTS/STELEM/"
 
+-- To be populated in ini() accordingly user selection screen size
+shared.Screens = { }
+shared.screenItems = { }
+shared.screensFile = nil
+
+-- General config options
 shared.MenuItems = {
-	{ "Cell voltage",1,"False","True" },
-	{ "Number of cells",4,"1","2","3","4","5","6","7","8" },
-	{ "Variometer clip val",8,"5","10","15","20","25","30","35","40","45","50","55","60",
-		"65","70","75","80","90","100","110","120","130","140","150","160","170","180","190","200" },
-	{ "Att. indicator scale",1,"90","100","110","120","130","140","150","160","170","180" },
-	{ "Msg log",1,"False","True" },
-	{ "Sounds",2,"False","True" },
-	{ "Enable map test",1,"False","True"},
-	{ "Splash Screen",2,"False","True"}
+	{ "Cell voltage",    1, "False", "True" },
+	{ "Number of cells", 4, "1", "2", "3", "4", "5", "6", "7", "8" },
+	{ "Variometer clip val", 8, "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60",
+		"65", "70", "75", "80", "90", "100", "110", "120", "130", "140", "150", "160", "170", "180", "190", "200" },
+	{ "Att. indicator scale", 1, "90",      "100",     "110", "120", "130", "140", "150", "160", "170", "180" },
+	{ "Msg log",1, "False",   "True" },
+	{ "Sounds", 2, "False",   "True" },
+	{ "Splash Screen",2, "False",   "True" },
+	{ "Screen Size",1,"128x64" },
+	--- Screens --
+	{ "Screen 1",1, "Enabled", "Disabled" },
+	{ "Screen 2",1, "Enabled", "Disabled" },
+	{ "Msg screen",1, "Enabled", "Disabled" }
+	--- Screens --
 }
 
 local mavSeverity = {
@@ -110,10 +121,10 @@ local function processTelemetry(appId, value, now)
 		shared.tel.gpsStatus = bit32.extract(value, 4, 2) + bit32.extract(value, 14, 2)
 	elseif appId == 0x5003 then                                                               -- BATT
 		shared.tel.batt1volt = bit32.extract(value, 0, 9) / 10                                 -- dV
-			local cellvolt = shared.GetConfig(1)
+			local cellvolt = shared.GetConfig("Cell voltage")
 			local dividefactor = 1
 			if cellvolt == "True" then
-				dividefactor = tonumber(shared.GetConfig(2))
+				dividefactor = tonumber(shared.GetConfig("Number of cells"))
 			end
 			shared.tel.batt1volt = shared.tel.batt1volt / dividefactor
 		shared.tel.batt1current = (bit32.extract(value, 10, 7) * (10 ^ bit32.extract(value, 9, 1))) / 10 --dA
@@ -202,7 +213,7 @@ local function crossfirePop()
 				soundfile = "gCleared.wav"
 			end
 			
-			local playsounds = shared.GetConfig(6)
+			local playsounds = shared.GetConfig("Sounds")
 			if playsounds == "True" then
 				playFile(soundsDir .. soundfile)
 			end
@@ -222,7 +233,7 @@ local function crossfirePop()
 end
 
 function shared.MessagesLog()
-	local msgconf = shared.GetConfig(5)
+	local msgconf = shared.GetConfig("Msg log")
 	if msgconf == "True" then
 		local dt = getDateTime()
 		msglogfilename = dt["sec"] ..
@@ -234,21 +245,49 @@ function shared.MessagesLog()
 end
 
 function shared.LoadScreen(screenref)
-	-- shared.CurrentScreen = 0
-	local chunk = loadScript(screenref)
+	local chunk = nil
+	if #shared.Screens == 0 then
+		chunk = loadScript(shared.Configmenu)
+	else
+		chunk = loadScript(screenref)
+	end
+	
 	chunk(shared)
 end
 
-function shared.GetConfig(confnumber)
+function shared.GetConfig(confname)
+	local confnumber = 0
+	for cf = 1, #shared.MenuItems
+	do
+		local to = string.upper(shared.MenuItems[cf][1])
+		if to == string.upper(confname) then
+			confnumber = cf
+		end
+	end
 	local seloption = tonumber(shared.MenuItems[confnumber][2])
 	return shared.MenuItems[confnumber][seloption + 2]
 end
 
-function shared.SaveSettings()
-	file = io.open(configFile, "w")
-	for i = 1, #shared.MenuItems
+function shared.getSettingsSubSet(localCopy, list)
+	local subs = {}
+	for e = 1, #list
 	do
-		local confline = shared.MenuItems[i]
+		local elem = list[e]
+		for set = 1, #localCopy
+		do
+			if string.upper(localCopy[set][1]) == string.upper(elem) then
+				subs[#subs + 1] = localCopy[set]
+			end
+		end		
+	end
+	return subs
+end
+
+function shared.SaveSettings(configFile, localCopy)
+	file = io.open(configFile, "w")
+	for i = 1, #localCopy
+	do
+		local confline = localCopy[i]
 		for j = 1, #confline
 		do
 			io.write(file, confline[j], ",")
@@ -258,7 +297,7 @@ function shared.SaveSettings()
 	io.close(file)
 end
 
-local function stelemLoadSettings()
+local function stelemLoadSettings(configFile, localCopy)
 	local cfg = io.open(configFile, "r")
 	if cfg ~= nil then
 		local str = io.read(cfg, 500)
@@ -271,31 +310,22 @@ local function stelemLoadSettings()
 				cfgline[ctr] = tentry
 				ctr = ctr + 1
 			end
-			shared.MenuItems[archline] = cfgline
+			localCopy[archline] = cfgline
 			archline = archline + 1
 		end
 	else
-		shared.SaveSettings()
+		shared.SaveSettings(shared.configFile, shared.MenuItems)
 	end
 end
 
 
 function shared.CycleScreen(delta)
 	shared.CurrentScreen = shared.CurrentScreen + delta
-	local maptest = shared.GetConfig(7)
-
 	if shared.CurrentScreen > #shared.Screens then
 		shared.CurrentScreen = 1
 	elseif shared.CurrentScreen < 1 then
 		shared.CurrentScreen = #shared.Screens
 	end
-	-- temporary
-	if maptest == "False" and shared.CurrentScreen == #shared.Screens and delta == 1 then
-		shared.CurrentScreen = 1
-	elseif maptest == "False" and shared.CurrentScreen == #shared.Screens and delta == -1 then
-		shared.CurrentScreen = #shared.Screens - 1
-	end
-	-- temporary
 	shared.LoadScreen(shared.Screens[shared.CurrentScreen])
 end
 
@@ -318,20 +348,40 @@ function shared.LoadLua(filename)
 	end
 end
 
+function shared.loadScreens()
+	local screenSize = shared.GetConfig("Screen Size")
+	local screensDir = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize
+	shared.screensFile = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize .. "/scsList.cfg"
+	stelemLoadSettings(shared.screensFile, shared.screenItems)
+	shared.Screens = { }
+	local act = 1
+	for t=1, #shared.screenItems
+	do
+		if shared.screenItems[t][2] == "1" then
+			shared.Screens[act] = screensDir .. "/" .. shared.screenItems[t][1] .. ".lua"
+			act = act + 1
+		end		
+	end	
+end
+
 local function init()
-	stelemLoadSettings()
-	shared.CycleScreen(0)
+	stelemLoadSettings(shared.configFile, shared.MenuItems)
+	shared.loadScreens()
+	shared.LoadScreen(shared.Screens[1])
 	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
 	shared.MessagesLog()
-
 end
 
 local function run(event)
-	if shared.GetConfig(8) == "True" and splashactive then
-		shared.LoadScreen(splashscreen)
-		splashactive = false
+	if shared.GetConfig("Splash Screen") == "True" and splashactive then
+		shared.LoadScreen(splashscreen)		
 	end
-	shared.run(event)
+	splashactive = false
+	if shared.telecount == false then -- needs debouncing (TELE KEY) from script first load or loads map also
+		shared.telecount = true
+	else
+		shared.run(event)
+	end	
 end
 
 return { run = run, init = init, background=background }

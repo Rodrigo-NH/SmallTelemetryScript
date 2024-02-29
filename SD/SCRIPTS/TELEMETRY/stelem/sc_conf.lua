@@ -1,84 +1,88 @@
 local shared = ...
 
-local optchoice = 1
-local isediting = 0
+local opt = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
+local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+
+local optchoiceu = 1
+local iseditingu = 0
+-- local sbs = shared.getSettingsSubSet({ "Sounds", "Att. indicator scale" })
+local usrindex = 1
+local editpart = 0
+
+local menustruct = {
+  { "General settings",      1 },
+  { "Nav instrum. settings", 1 },
+  { "Telemetry settings",    1 },
+  { "Screens",    1 }
+}
+
+local usroptmap = { 1 }
+local debouncer = 0
+
+local gopt = shared.getSettingsSubSet(shared.MenuItems, {"Screen Size","Msg log","Sounds","Splash Screen"})
+local navs = shared.getSettingsSubSet(shared.MenuItems, {"Variometer clip val","Att. indicator scale",})
+local tels = shared.getSettingsSubSet(shared.MenuItems, {"Cell voltage","Number of cells",})
+local scs = shared.screenItems
 
 function shared.run(event)
   lcd.clear()
 
-  local function getSettings()
-    lcd.clear()
-    local linen = 0
-    for i = 1, #shared.MenuItems
-    do
-      local confline = shared.MenuItems[i]
-      for j = 1, #confline
-      do
-        local seloption = tonumber(shared.MenuItems[i][2])
-        local actvalue = shared.MenuItems[i][seloption + 2]
-        lcd.drawText(0, linen, tostring(shared.MenuItems[i][1]) .. ": ", SMLSIZE)
-
-        if i == optchoice then
-          if isediting == 0 then
-            lcd.drawText(95, linen, tostring(actvalue), SMLSIZE + INVERS)
-          else
-            lcd.drawText(95, linen, tostring(actvalue), SMLSIZE + INVERS + BLINK)
-          end
-        else
-          lcd.drawText(95, linen, tostring(actvalue), SMLSIZE)
-        end
+  if editpart == 0 then
+    local bindex = usrindex
+    local exps = gfx.expandOption(usroptmap, menustruct, event, usrindex)
+    usroptmap = exps[3]
+    usrindex = exps[4]
+    if exps[1] ~= nil then
+      if exps[2] == "General settings" then
+        editpart = 1
+      elseif exps[2] == "Nav instrum. settings" then
+        editpart = 2
+      elseif exps[2] == "Telemetry settings" then
+        editpart = 3
+      elseif exps[2] == "Screens" then
+        editpart = 4
       end
-      linen = linen + 7
-    end
-
-    if optchoice == #shared.MenuItems + 1 then
-      lcd.drawText(0, 57, "Save and Exit", SMLSIZE + INVERS)
-    else
-      lcd.drawText(0, 57, "Save and Exit", SMLSIZE)
+      event = 0
+      usroptmap = { 1 }
+      usrindex = bindex
     end
   end
 
-  getSettings()
+  if editpart ~= 0 then
+    debouncer = debouncer + 1
+    if debouncer > 2 then
+      local ctr = nil
+      if editpart == 1 then
+        ctr = opt.optionsScreen(gopt, optchoiceu, iseditingu, event)
+      elseif editpart == 2 then
+        ctr = opt.optionsScreen(navs, optchoiceu, iseditingu, event)
+      elseif editpart == 3 then
+        ctr = opt.optionsScreen(tels, optchoiceu, iseditingu, event)
+      elseif editpart == 4 then
+        ctr = opt.optionsScreen(scs, optchoiceu, iseditingu, event)
+      end
 
-  if event == EVT_VIRTUAL_NEXT then
-    if isediting == 0 then
-      optchoice = optchoice + 1
-      if optchoice > #shared.MenuItems + 1 then
-        optchoice = optchoice - 1
-      end
-    else
-      local seloption = tonumber(shared.MenuItems[optchoice][2]) + 1
-      local optiondata = shared.MenuItems[optchoice][seloption + 2]
-      if optiondata ~= nil then
-        shared.MenuItems[optchoice][2] = seloption
-      end
-    end
-
-  elseif event == EVT_VIRTUAL_PREV then
-    if isediting == 0 then
-      optchoice = optchoice - 1
-      if optchoice < 1 then
-        optchoice = optchoice + 1
-      end
-    else
-      local seloption = tonumber(shared.MenuItems[optchoice][2]) - 1
-      if seloption > 0 then
-        shared.MenuItems[optchoice][2] = seloption
-      end
-    end
-
-  elseif event == EVT_VIRTUAL_ENTER then
-    if optchoice == #shared.MenuItems + 1 then
-      -- shared.CycleScreen(1)
-      shared.LoadScreen(shared.Screens[1])
-      shared.SaveSettings()
-      shared.MessagesLog()
-    else
-      if isediting == 0 then
-        isediting = 1
+      if ctr ~= nil then
+        iseditingu = ctr[2]
+        optchoiceu = ctr[1]
       else
-        isediting = 0
+        shared.SaveSettings(shared.configFile, shared.MenuItems)
+        shared.SaveSettings(shared.screensFile, shared.screenItems)
+        editpart = 0
       end
     end
   end
+
+  if #usroptmap == 0 then
+    shared.loadScreens()
+    if #shared.Screens < shared.CurrentScreen then
+      shared.CurrentScreen = 1
+    end
+    if #shared.Screens ~= 0 then
+      shared.LoadScreen(shared.Screens[shared.CurrentScreen])
+    else
+      usroptmap = { 1 }
+    end
+  end
+
 end
