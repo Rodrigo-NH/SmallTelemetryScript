@@ -47,9 +47,9 @@ Sounds: Enable/Disable script sounds. Actully just two sound files (relative to 
 
 If you test it and able to report: Open an issue reporting which radio (and system EdgeTX or OpenTX and version) you tested it and results so it can be added to the list. If you don't have a github account you can send me a direct message -> https://discuss.ardupilot.org/u/rodrigonh76/summary  
 
-![Screenshot1](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot1.JPG)  
-![Screenshot2](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot2.JPG)  
-![Screenshot3](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot3.JPG)  
-![Screenshot4](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot4.JPG)  
+![Screenshot1](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot1.jpg)  
+![Screenshot2](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot2.jpg)  
+![Screenshot3](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot3.jpg)  
+![Screenshot4](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot4.jpg)  
 ## Tested radios
 Radiomaster TX12 - EdgeTX 2.8
