@@ -477,14 +477,14 @@ function expandOption(optmap, menuoptions, uevent, currindex)
           for e = 1, #scs
           do                
               if e < #scs then
-                  drawSelectBox(rec1, rec2, 7, optmap[e], scs[e])
+                  drawSelectBox(rec1, rec2, 6, optmap[e], scs[e])
               else
                   if currindex < 1 then
                       currindex = 1
                   elseif currindex > #scs[e] then
                       currindex = #scs[e]
                   end
-                  drawSelectBox(rec1, rec2, 7, currindex, scs[e])
+                  drawSelectBox(rec1, rec2, 6, currindex, scs[e])
               end
               rec1 = rec1 + 5
               rec2 = rec2 + 5

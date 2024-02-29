@@ -20,25 +20,23 @@ local strout = ""
 local ctr = 0
 local ctr3 = 1
 local coords = { }
-
+ 
 local thisopt = {
     { "Center on", 2, 
         {
-            { "Copter - not sticky", 1 },
+            { "Copter - once", 1 },
             { "Copter - sticky", 1 },
             { "Home", 1 },
             { "Center map", 1 },
             { "WayPoint", 2, 
                 { 
-                    { "WP1", 1 },
-                    { "WP2", 1 },
-                    { "WP3", 1 },
-                    { "WP4", 1 },
-
+                    -- to be filled with actual waypoints
+                    -- {"wp1",1 },  
                 }
             },
         }
     },
+    { "Reset scale", 1 },
     { "Map options", 1 },
 }
 
@@ -49,17 +47,15 @@ local mc2 = 0
 local usrindex = 1
 local usroptmap = {  }
 local RTNflag = true
-
-lcd.clear()
+local ucommand = ""
+local centeroffsetX = 0
+local centeroffsetY = 0
 
     -- Extract data from mission planner TXT file
+    local WPnumbers = 1
   while ctr ~= nil
   do
-    lcd.drawText(0, 0, "Loading M. planner TXT file", SMLSIZE + INVERS)
-    local mc = collectgarbage("count")
-    if mc > mc1 then
-        mc1 = mc
-    end
+    
       local charc = io.read(file, 1)
       ctr = string.byte(charc)
       if charc ~= "\n" and ctr ~= nil then
@@ -75,21 +71,31 @@ lcd.clear()
               end
           end
           local tcoords = {}
-          if ctr2 > 1 then
-            print(itagout[1] .. " -> " .. itagout[9])  
-              tcoords[1] = itagout[1]
-              tcoords[2] = itagout[2]
-              tcoords[3] = itagout[3]
-              tcoords[4] = itagout[4]
-              tcoords[5] = itagout[9]
-              tcoords[6] = itagout[10]
-              coords[ctr3] = tcoords
-              ctr3 = ctr3 + 1
-          end
+        if ctr2 > 1 then
+            -- print(itagout[1] .. " -> " .. itagout[9])
+            tcoords[1] = itagout[1]
+            tcoords[2] = itagout[2]
+            tcoords[3] = itagout[3]
+            tcoords[4] = itagout[4]
+            tcoords[5] = itagout[9]
+            tcoords[6] = itagout[10]
+            coords[ctr3] = tcoords
+
+            if tonumber(itagout[9]) ~= 0 then
+                local wpname = "WP-" .. tostring(ctr3 - 1)
+                thisopt[1][3][5][3][WPnumbers] = { wpname, 1 }
+                WPnumbers = WPnumbers + 1
+            end
+
+
+            ctr3 = ctr3 + 1
+        end
           strout = ""
       end
   end
   io.close(file)
+
+ 
 
   -- Creates a 'slot' to insert/update drone actual position
   local scoords = {}
@@ -127,10 +133,14 @@ function shared.run(event)
         coords[#coords][6] = shared.tel.lon
     end
 
+    -- coords[#coords][5] = -19.93430
+    -- coords[#coords][6] = -43.97419
+
     if shared.homeLocation[1] ~= 0 then
         coords[1][5] = shared.homeLocation[1]
         coords[1][6] = shared.homeLocation[2]
     end
+
 
     -- "Canvas" = Screen size
     local destW = 128
@@ -195,18 +205,59 @@ function shared.run(event)
     -- center point group in screen
     local centerY = math.floor((destH - (yDiff * baseScale)) / 2)
     local centerX = math.floor((destW - (xDiff * baseScale)) / 2)
+    
+
 
 
     -- Translate to screen
-    ctr = 0
+
+    
     for t=1, #coords
     do
+
         local destX = math.floor(((coords[t][8] - Xmin) * baseScale) + centerX)
         local destY = math.floor(((coords[t][7] - Ymin) * baseScale) + centerY)
-        ctr = ctr + 8
-        coords[t][10] = destX
-        coords[t][9] = destY
+
+
+   
+        local sw = 128
+        local sh = 64
+        local wref = sw / 2
+        local href = sh / 2
+        if #ucommand == 2 and ucommand[1] == "WP" and t == ucommand[2] then
+            centeroffsetX = wref - destX
+            centeroffsetY = href - destY
+            -- end
+        elseif t == 1 and ucommand == "Home" then
+            centeroffsetX = wref - destX
+            centeroffsetY = href - destY
+            -- end
+        elseif ucommand == "Center map" then
+            centeroffsetX = 0
+            centeroffsetY = 0
+            -- end
+        elseif ucommand == "Copter - sticky" and t == #coords and coords[t][5] ~= 0 then
+            centeroffsetX = wref - destX
+            centeroffsetY = href - destY
+            -- end
+        elseif ucommand == "Copter - once" and t == #coords and coords[t][5] ~= 0 then
+            centeroffsetX = wref - destX
+            centeroffsetY = href - destY
+            ucommand = ""
+        elseif ucommand == "Reset scale" then
+            zoom = 10
+            centeroffsetX = 0
+            centeroffsetY = 0
+            ucommand = ""
+        end
+
+
+        coords[t][10] = destX + centeroffsetX
+        coords[t][9] = destY + centeroffsetY
     end
+
+
+
 
     for g = 1, #coords
     do
@@ -281,12 +332,18 @@ function shared.run(event)
         if fag[1] ~= nil then
             print(fag[1]) -- Command type
             print(fag[2]) -- Command data
+            if fag[1] == 1 then
+                ucommand = fag[2]
 
-            if fag[1] == 3 then
-                for e = 1, #fag[2]
-                do
-                    print(fag[2][e])
+                local isWP = nil
+                if string.find(ucommand, "WP-") then
+                    for str in string.gmatch(ucommand, '([^WP-]+)')
+                    do
+                        isWP = tonumber(str)
+                    end
+                    ucommand = { "WP", isWP + 1}
                 end
+
             end
         end
     elseif event == EVT_VIRTUAL_ENTER then
