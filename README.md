@@ -36,9 +36,9 @@ Sounds: Enable/Disable script sounds. Actully just two sound files (relative to 
 
 
  ## Current
- Testing a map screen (WIP). You can enter map pressing TELE button. ENTER will load map specific options (testing).  
- Sample "/SCRIPTS/TELEMETRY/stelem/mission.txt" included  
- You can load your own Mission Planner TXT file to "/SCRIPTS/TELEMETRY/stelem/mission.txt" (override the current file)  
+ Testing a map screen (WIP). You can enter map pressing TELE button. ENTER will load map specific options.   
+ Put your Mission Planner TXT files under "\SCRIPTS\TELEMETRY\stelem\missions" and load from map menu (ENTER).  
+
  
 ![Map test](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/mapwip.jpg)
 

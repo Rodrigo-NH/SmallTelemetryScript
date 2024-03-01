@@ -1,25 +1,20 @@
 local shared = { }
 local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
-
--- shared.Screens = {
--- 	"/SCRIPTS/TELEMETRY/stelem/sc_t1.lua",
--- 	"/SCRIPTS/TELEMETRY/stelem/sc_t2.lua",
--- 	"/SCRIPTS/TELEMETRY/stelem/sc_t3.lua",
--- }
-
 shared.Mapscreen = "/SCRIPTS/TELEMETRY/stelem/sc_map.lua"
-shared.telecount = false
 shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/sc_conf.lua"
 shared.configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
 local messagesLogDir = "/SCRIPTS/TELEMETRY/stelem/logs/"
 local soundsDir = "/SOUNDS/en/SCRIPTS/STELEM/"
+shared.missionFile = ""
 
 -- To be populated in ini() accordingly user selection screen size
 shared.Screens = { }
 shared.screenItems = { }
 shared.screensFile = nil
+shared.screenW = nil
+shared.screenH = nil
 
--- General config options
+-- All config options
 shared.MenuItems = {
 	{ "Cell voltage",    1, "False", "True" },
 	{ "Number of cells", 4, "1", "2", "3", "4", "5", "6", "7", "8" },
@@ -29,12 +24,7 @@ shared.MenuItems = {
 	{ "Msg log",1, "False",   "True" },
 	{ "Sounds", 2, "False",   "True" },
 	{ "Splash Screen",2, "False",   "True" },
-	{ "Screen Size",1,"128x64" },
-	--- Screens --
-	{ "Screen 1",1, "Enabled", "Disabled" },
-	{ "Screen 2",1, "Enabled", "Disabled" },
-	{ "Msg screen",1, "Enabled", "Disabled" }
-	--- Screens --
+	{ "Screen Size",1,"128x64","212x64" },
 }
 
 local mavSeverity = {
@@ -51,6 +41,7 @@ local mavSeverity = {
 shared.Heartbeat = 0
 shared.CurrentScreen = 1
 local splashactive = true
+local telecount = { 0, 0, false }
 
 shared.tel = { }
 shared.tel.flightMode = 0
@@ -80,7 +71,7 @@ shared.tel.wpBearing = 0
 shared.tel.lat = 0
 shared.tel.lon = 0
 
--- Last know home location lat/long
+-- Last know home (origin set) location lat/long
 shared.homeLocation = { 0, 0 }
 
 shared.Messages = {}
@@ -196,11 +187,12 @@ local function crossfirePop()
 				io.write(msglogfile, mavSeverity[severity] .. "= " .. tmessage .. "\n")
 			end
 
+			local soundfile = ""
 			if string.match(tmessage, "origin set") then
 				shared.homeLocation = {shared.tel.lat, shared.tel.lon}
-			end	
+				soundfile = "orginSet.wav"				
+			end				
 			
-			local soundfile = ""
 			if severity < 6 and severity > 3 then
 				soundfile = "alarm2.wav"
 			elseif severity < 4 then
@@ -297,9 +289,10 @@ function shared.SaveSettings(configFile, localCopy)
 	io.close(file)
 end
 
-local function stelemLoadSettings(configFile, localCopy)
+function shared.LoadSettings(configFile, localCopy)
 	local cfg = io.open(configFile, "r")
 	if cfg ~= nil then
+		-- localCopy = { }
 		local str = io.read(cfg, 500)
 		io.close(cfg)
 		local archline = 1
@@ -329,15 +322,6 @@ function shared.CycleScreen(delta)
 	shared.LoadScreen(shared.Screens[shared.CurrentScreen])
 end
 
-local function background()
-		local success, sensor_id, frame_id, data_id, value = pcall(crossfirePop)
-		if success and frame_id == 0x10 then
-			local now = getTime()
-			processTelemetry(data_id, value, now)
-		end
-		
-end
-
 function shared.LoadLua(filename)
 	local success, f = pcall(loadScript, filename)
 	if success then
@@ -350,9 +334,20 @@ end
 
 function shared.loadScreens()
 	local screenSize = shared.GetConfig("Screen Size")
+	print("SIZE: " .. screenSize)
+	local sz = shared.GetConfig("Screen Size")
+	if sz == "128x64" then
+		shared.screenW = 128
+		shared.screenH = 64
+	elseif sz == "212x64" then
+		shared.screenW = 212
+		shared.screenH = 64
+	end
 	local screensDir = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize
 	shared.screensFile = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize .. "/scsList.cfg"
-	stelemLoadSettings(shared.screensFile, shared.screenItems)
+	print("DIR: " .. shared.screensFile)
+	shared.screenItems = { }
+	shared.LoadSettings(shared.screensFile, shared.screenItems)
 	shared.Screens = { }
 	local act = 1
 	for t=1, #shared.screenItems
@@ -364,24 +359,56 @@ function shared.loadScreens()
 	end	
 end
 
+function shared.runSplash()
+	if shared.GetConfig("Splash Screen") == "True" and splashactive then
+		splashactive = false
+		shared.LoadScreen(splashscreen)
+	else
+		splashactive = false
+	end
+
+end
+
+local function background(event)
+	local success, sensor_id, frame_id, data_id, value = pcall(crossfirePop)
+	if success and frame_id == 0x10 then
+		local now = getTime()
+		processTelemetry(data_id, value, now)
+	end
+
+	if telecount[3] then -- TELE key debouncer
+		telecount[3] = false
+		telecount[1] = telecount[1] + 1
+	else
+		telecount[2] = telecount[2] + 1
+		if telecount[2] > 20 then
+			telecount[2] = 0
+			telecount[1] = 0
+		end		
+	end
+end
+
 local function init()
-	stelemLoadSettings(shared.configFile, shared.MenuItems)
+	shared.LoadSettings(shared.configFile, shared.MenuItems)
+	-- shared.loadScreenSizes()
 	shared.loadScreens()
 	shared.LoadScreen(shared.Screens[1])
 	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
 	shared.MessagesLog()
+	telecount[1] = 0
+	telecount[2] = getTime()
 end
 
 local function run(event)
-	if shared.GetConfig("Splash Screen") == "True" and splashactive then
-		shared.LoadScreen(splashscreen)		
+	shared.runSplash()
+	telecount[3] = true
+
+	if event == 102 and telecount[1] > 10 then
+		shared.LoadScreen(shared.Mapscreen)
+		telecount[1] = 0
 	end
-	splashactive = false
-	if shared.telecount == false then -- needs debouncing (TELE KEY) from script first load or loads map also
-		shared.telecount = true
-	else
+
 		shared.run(event)
-	end	
 end
 
 return { run = run, init = init, background=background }

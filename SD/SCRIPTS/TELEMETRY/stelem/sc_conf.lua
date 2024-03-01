@@ -1,7 +1,6 @@
 local shared = ...
 
-local opt = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
-local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+local cm = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
 
 local optchoiceu = 1
 local iseditingu = 0
@@ -22,14 +21,18 @@ local debouncer = 0
 local gopt = shared.getSettingsSubSet(shared.MenuItems, {"Screen Size","Msg log","Sounds","Splash Screen"})
 local navs = shared.getSettingsSubSet(shared.MenuItems, {"Variometer clip val","Att. indicator scale",})
 local tels = shared.getSettingsSubSet(shared.MenuItems, {"Cell voltage","Number of cells",})
-local scs = shared.screenItems
+
+
+
+shared.loadScreens()
 
 function shared.run(event)
   lcd.clear()
+  local scs = shared.screenItems
 
   if editpart == 0 then
     local bindex = usrindex
-    local exps = gfx.expandOption(usroptmap, menustruct, event, usrindex)
+    local exps = cm.expandOption(usroptmap, menustruct, event, usrindex)
     usroptmap = exps[3]
     usrindex = exps[4]
     if exps[1] ~= nil then
@@ -53,13 +56,13 @@ function shared.run(event)
     if debouncer > 2 then
       local ctr = nil
       if editpart == 1 then
-        ctr = opt.optionsScreen(gopt, optchoiceu, iseditingu, event)
+        ctr = cm.optionsScreen(gopt, optchoiceu, iseditingu, event)
       elseif editpart == 2 then
-        ctr = opt.optionsScreen(navs, optchoiceu, iseditingu, event)
+        ctr = cm.optionsScreen(navs, optchoiceu, iseditingu, event)
       elseif editpart == 3 then
-        ctr = opt.optionsScreen(tels, optchoiceu, iseditingu, event)
-      elseif editpart == 4 then
-        ctr = opt.optionsScreen(scs, optchoiceu, iseditingu, event)
+        ctr = cm.optionsScreen(tels, optchoiceu, iseditingu, event)
+      elseif editpart == 4 then        
+        ctr = cm.optionsScreen(scs, optchoiceu, iseditingu, event)
       end
 
       if ctr ~= nil then
@@ -68,11 +71,12 @@ function shared.run(event)
       else
         shared.SaveSettings(shared.configFile, shared.MenuItems)
         shared.SaveSettings(shared.screensFile, shared.screenItems)
+        shared.loadScreens()  
         editpart = 0
       end
     end
   end
-
+ 
   if #usroptmap == 0 then
     shared.loadScreens()
     if #shared.Screens < shared.CurrentScreen then
