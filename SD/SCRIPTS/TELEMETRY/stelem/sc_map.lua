@@ -24,36 +24,37 @@ local RTNflag = true
 local ucommand = ""
 local centeroffsetX = 0
 local centeroffsetY = 0
-local zoom = 10
-local debouncer = 0
-local debouncerflag = 0
- 
-local thisopt = {
-    { "Center on", 2, 
-        {
-            { "Copter - once", 1 },
-            { "Copter - sticky", 1 },
-            { "Home", 1 },
-            { "Center map", 1 },
-            { "WayPoint", 2, 
-                { 
-                    -- to be filled with actual waypoints
-                    {"wp1",1 },  
-                }
-            },
-        }
-    },
-    { "Reset scale", 1 },
-    { "Map options", 1 },
-    { "Load mission from SD card", 2,
-        {
-            -- to be filled with mission files from /missions/ directory
+local zoom = 10 
+local thisopt = nil
+
+
+local function resetTable()
+    thisopt = {
+        { "Center on", 2,
+            {
+                { "Copter - once",   1 },
+                { "Copter - sticky", 1 },
+                { "Home",            1 },
+                { "Center map",      1 },
+                { "WayPoint", 2,
+                    {
+                        -- to be filled with actual waypoints
+                        -- {"wp1",1 },
+                    }
+                },
+            }
+        },
+        { "Reset scale", 1 },
+        { "Map options", 1 },
+        { "Load mission from SD card", 2,
+            {
+                -- to be filled with mission files from /missions/ directory
+            }
         }
     }
-}
+    collectgarbage("collect")
 
-
-local y = 1
+    local y = 1
 for fname in dir("/SCRIPTS/TELEMETRY/stelem/missions") do
     local fnameU = string.upper(fname)        
             if string.find(fnameU, ".TXT") then
@@ -63,6 +64,13 @@ for fname in dir("/SCRIPTS/TELEMETRY/stelem/missions") do
                 y = y + 1
             end
 end
+end
+
+
+
+
+
+resetTable()
 
 
 local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
@@ -70,27 +78,35 @@ local cm = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
 local bitmaps = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/bitmaps.lua")
 
 local function loadMission()
-    coords = {}
+    resetTable()
     zoom = 10
     centeroffsetX = 0
     centeroffsetY = 0
     ucommand = ""
-    local ctr = 0
+    coords = {}
+    collectgarbage("collect")
     local ctr3 = 1
-    local strout = ""
+    inimem = collectgarbage("count")
+    local info = fstat(shared.missionFile)
+    local size = info.size
+    file = io.open(shared.missionFile, "r")
+    iomem = collectgarbage("count")
+    local str = io.read(file, size)
+    io.close(file)
+    iomem2 = collectgarbage("count")
+    local sl = string.len(str)
+    local line = ""
     local WPnumbers = 1
-    thisopt[1][3][5][3] = {}
-    local file = io.open(shared.missionFile, "r")
-    while ctr ~= nil
+    -- thisopt[1][3][5][3] = {}
+    for t = 1, sl
     do
-        local charc = io.read(file, 1)
-        ctr = string.byte(charc)
-        if charc ~= "\n" and ctr ~= nil then
-            strout = strout .. charc
+        local charc = string.sub(str, t, t)
+        if charc ~= "\n" then
+            line = line .. charc
         else
             local itagout = {}
             local ctr2 = 1
-            for itag in string.gmatch(strout, "(.-)\t") do
+            for itag in string.gmatch(line, "(.-)\t") do
                 if itag ~= nil then
                     itagout[ctr2] = itag
                     ctr2 = ctr2 + 1
@@ -105,18 +121,18 @@ local function loadMission()
                 tcoords[5] = itagout[9]
                 tcoords[6] = itagout[10]
                 coords[ctr3] = tcoords
-
                 if tonumber(itagout[9]) ~= 0 then
                     local wpname = "WP-" .. tostring(ctr3 - 1)
                     thisopt[1][3][5][3][WPnumbers] = { wpname, 1 }
                     WPnumbers = WPnumbers + 1
                 end
+
                 ctr3 = ctr3 + 1
             end
-            strout = ""
+            line = ""
+            collectgarbage("collect")
         end
     end
-    io.close(file)
     -- Creates a 'slot' to insert/update drone actual position
     local scoords = {}
     for s = 1, 6
