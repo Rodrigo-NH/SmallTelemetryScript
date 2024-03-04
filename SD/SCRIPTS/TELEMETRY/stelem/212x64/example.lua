@@ -10,9 +10,7 @@ function shared.run(event)
   lcd.drawText(0, 28, "and adding a corresponding", SMLSIZE)
   lcd.drawText(0, 35, "scsList.cfg file", SMLSIZE)
   
-if event == EVT_VIRTUAL_ENTER then
-    shared.LoadScreen(shared.Configmenu)
-end
+  shared.defaultActions(event)
 
 
 end

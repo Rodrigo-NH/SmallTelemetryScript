@@ -6,7 +6,8 @@ This is a spin-off of **Yaapu Telemetry Script and Widget** aimed to low capacit
 I had some important (blocking) issues trying to use Yaapu Telemetry on TX12. Tried to work around the issues (https://github.com/yaapu/FrskyTelemetryScript/issues/208) without success. Moreover, graphical elements seemed too 'laggy' with freezes the times it (somewhat) worked. It's probably that actual screens (and code as whole) are too heavy for a small radio like TX12.
 
 ## Installation
-Click 'Code' button then 'Download ZIP'. Enter (cd into) downloaded SD directory. Copy folders (SCRIPTS and SOUNDS) to the root of radio's SD card. Activate script in the radio. Radio will generate the .luac files upon first activation, power cycle the radio if it throws any error at this stage.
+Click 'Code' button then 'Download ZIP'. Enter (cd into) downloaded SD directory. Copy folders (SCRIPTS and SOUNDS) to the root of radio's SD card. Activate script in the radio.  
+**Attention**: radio will generate the compiled .luac files upon first activation. You may need to power cycle radio and activate script (TELE key) some times until all luac files are generated sucefully. (two power cycles for TX12)
 
 ![Download](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/download.JPG)  
 
@@ -37,7 +38,7 @@ Sounds: Enable/Disable script sounds. Actully just two sound files (relative to 
 
  ## Current
  Testing a map screen (WIP). You can enter map pressing TELE button. ENTER will load map specific options.   
- Put your Mission Planner TXT files under "\SCRIPTS\TELEMETRY\stelem\missions" and load from map menu (ENTER).  
+ Put your Mission Planner TXT files under "\SCRIPTS\TELEMETRY\stelem\missions" and load from map screen.  
 
  
 ![Map test](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/mapwip.jpg)

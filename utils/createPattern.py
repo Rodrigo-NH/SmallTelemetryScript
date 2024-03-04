@@ -4,7 +4,7 @@ import os, io
 from PIL import Image
 
 def main():
-    filelocal = os.path.join(r'D:\share\bitmaps\example.bmp')
+    filelocal = os.path.join(r'D:\share\DEV\githubmirrors\SmallTelemetryScript\utils\n6.bmp')
     im = Image.open(filelocal)
     pp = list(im.getdata())
     psize = im.size

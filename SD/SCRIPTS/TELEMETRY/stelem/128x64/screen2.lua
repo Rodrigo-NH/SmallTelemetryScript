@@ -1,5 +1,5 @@
 local shared = ...
-local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/libs/graphics.lua")
 
 function shared.run(event)
   lcd.clear()
@@ -34,12 +34,6 @@ function shared.run(event)
 
   lcd.drawText(71, 57, shared.Frame.flightModes[shared.tel.flightMode], SMLSIZE + INVERS )
 
-  if event == EVT_VIRTUAL_NEXT or event == 99 then
-    shared.CycleScreen(1)
-  elseif event == EVT_VIRTUAL_PREV or event == 98 then
-    shared.CycleScreen(-1)
-  elseif event == EVT_VIRTUAL_ENTER then
-    shared.LoadScreen(shared.Configmenu)
-  end
+  shared.defaultActions(event)
 end
 

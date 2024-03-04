@@ -11,15 +11,12 @@ function shared.run(event)
 	end
 
 
-  if event == EVT_VIRTUAL_NEXT or event == 99 then
-    shared.CycleScreen(1)
-  elseif event == EVT_VIRTUAL_PREV or event == 98 then
-    shared.CycleScreen(-1)
-  elseif event == EVT_VIRTUAL_ENTER then
-    shared.LoadScreen(shared.Configmenu)
-  elseif event == 96 then
+  shared.defaultActions(event)
+
+  if event == 96 then
     shared.Messages = {}
     shared.MessagesIndex = 1
   end
+  
 end
 

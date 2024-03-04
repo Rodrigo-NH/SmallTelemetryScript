@@ -1,5 +1,5 @@
 local shared = ...
-local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/graphics.lua")
+local gfx = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/libs/graphics.lua")
 -- local opt = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
 
 function shared.run(event)
@@ -36,13 +36,7 @@ function shared.run(event)
 
 
 
-  if event == EVT_VIRTUAL_NEXT or event == 99 then
-    shared.CycleScreen(1)
-  elseif event == EVT_VIRTUAL_PREV or event == 98 then
-    shared.CycleScreen(-1)
-  elseif event == EVT_VIRTUAL_ENTER then
-    shared.LoadScreen(shared.Configmenu)    
-  end
+  shared.defaultActions(event)
 
 
 end

@@ -13,6 +13,7 @@ shared.screenItems = { }
 shared.screensFile = nil
 shared.screenW = nil
 shared.screenH = nil
+shared.pixelSize = nil -- millimeters
 
 -- All config options
 shared.MenuItems = {
@@ -25,6 +26,8 @@ shared.MenuItems = {
 	{ "Sounds", 2, "False",   "True" },
 	{ "Splash Screen",2, "False",   "True" },
 	{ "Screen Size",1,"128x64","212x64" },
+	{ "Show WP numbers",1,"ON","OFF"},
+	{ "Show scale",1,"ON","OFF"}
 }
 
 local mavSeverity = {
@@ -236,17 +239,6 @@ function shared.MessagesLog()
 	end
 end
 
-function shared.LoadScreen(screenref)
-	local chunk = nil
-	if #shared.Screens == 0 then
-		chunk = loadScript(shared.Configmenu)
-	else
-		chunk = loadScript(screenref)
-	end
-	
-	chunk(shared)
-end
-
 function shared.GetConfig(confname)
 	local confnumber = 0
 	for cf = 1, #shared.MenuItems
@@ -311,6 +303,17 @@ function shared.LoadSettings(configFile, localCopy)
 	end
 end
 
+function shared.LoadScreen(screenref)
+	local chunk = nil
+	-- collectgarbage("collect")
+	if #shared.Screens == 0 then
+		chunk = loadScript(shared.Configmenu)
+	else
+		chunk = loadScript(screenref)
+	end
+	
+	chunk(shared)
+end
 
 function shared.CycleScreen(delta)
 	shared.CurrentScreen = shared.CurrentScreen + delta
@@ -339,9 +342,10 @@ function shared.loadScreens()
 	if sz == "128x64" then
 		shared.screenW = 128
 		shared.screenH = 64
+		shared.pixelSize = 0.405 -- TX12 screen
 	elseif sz == "212x64" then
 		shared.screenW = 212
-		shared.screenH = 64
+		shared.screenH = 0.405 -- ???
 	end
 	local screensDir = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize
 	shared.screensFile = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize .. "/scsList.cfg"
@@ -369,6 +373,20 @@ function shared.runSplash()
 
 end
 
+function shared.defaultActions(event)
+	telecount[3] = true
+	if event == 102 and telecount[1] > 10 then
+		shared.LoadScreen(shared.Mapscreen)
+		telecount[1] = 0
+	elseif event == EVT_VIRTUAL_NEXT or event == 99 then
+		shared.CycleScreen(1)
+	elseif event == EVT_VIRTUAL_PREV or event == 98 then
+		shared.CycleScreen(-1)
+	elseif event == EVT_VIRTUAL_ENTER then
+		shared.LoadScreen(shared.Configmenu)
+	end
+end
+
 local function background(event)
 	local success, sensor_id, frame_id, data_id, value = pcall(crossfirePop)
 	if success and frame_id == 0x10 then
@@ -389,26 +407,24 @@ local function background(event)
 end
 
 local function init()
-	shared.LoadSettings(shared.configFile, shared.MenuItems)
-	-- shared.loadScreenSizes()
-	shared.loadScreens()
-	shared.LoadScreen(shared.Screens[1])
 	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
+	shared.LoadSettings(shared.configFile, shared.MenuItems)
+	shared.loadScreens()	
 	shared.MessagesLog()
 	telecount[1] = 0
 	telecount[2] = getTime()
+	shared.LoadScreen(shared.Configmenu)
+	for s=1, #shared.Screens
+	do
+		shared.LoadScreen(shared.Screens[s])
+	end
+	shared.LoadScreen(shared.Mapscreen)
+	shared.LoadScreen(shared.Screens[1])
 end
 
 local function run(event)
 	shared.runSplash()
-	telecount[3] = true
-
-	if event == 102 and telecount[1] > 10 then
-		shared.LoadScreen(shared.Mapscreen)
-		telecount[1] = 0
-	end
-
-		shared.run(event)
+	shared.run(event)
 end
 
 return { run = run, init = init, background=background }

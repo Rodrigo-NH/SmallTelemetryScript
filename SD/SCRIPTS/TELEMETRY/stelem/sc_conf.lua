@@ -1,6 +1,7 @@
 local shared = ...
 
-local cm = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/common.lua")
+local cm = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/libs/opscreen.lua")
+local op = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/libs/opexpand.lua")
 
 local optchoiceu = 1
 local iseditingu = 0
@@ -12,7 +13,8 @@ local menustruct = {
   { "General settings",      1 },
   { "Nav instrum. settings", 1 },
   { "Telemetry settings",    1 },
-  { "Screens",    1 }
+  { "Screens",    1 },
+  { "Map options", 1}
 }
 
 local usroptmap = { 1 }
@@ -21,6 +23,7 @@ local debouncer = 0
 local gopt = shared.getSettingsSubSet(shared.MenuItems, {"Screen Size","Msg log","Sounds","Splash Screen"})
 local navs = shared.getSettingsSubSet(shared.MenuItems, {"Variometer clip val","Att. indicator scale",})
 local tels = shared.getSettingsSubSet(shared.MenuItems, {"Cell voltage","Number of cells",})
+local maps = shared.getSettingsSubSet(shared.MenuItems, {"Show WP numbers","Show scale"})
 
 
 
@@ -32,7 +35,7 @@ function shared.run(event)
 
   if editpart == 0 then
     local bindex = usrindex
-    local exps = cm.expandOption(usroptmap, menustruct, event, usrindex)
+    local exps = op.expandOption(usroptmap, menustruct, event, usrindex)
     usroptmap = exps[3]
     usrindex = exps[4]
     if exps[1] ~= nil then
@@ -44,6 +47,8 @@ function shared.run(event)
         editpart = 3
       elseif exps[2] == "Screens" then
         editpart = 4
+      elseif exps[2] == "Map options" then
+        editpart = 5
       end
       event = 0
       usroptmap = { 1 }
@@ -63,6 +68,8 @@ function shared.run(event)
         ctr = cm.optionsScreen(tels, optchoiceu, iseditingu, event)
       elseif editpart == 4 then        
         ctr = cm.optionsScreen(scs, optchoiceu, iseditingu, event)
+      elseif editpart == 5 then        
+        ctr = cm.optionsScreen(maps, optchoiceu, iseditingu, event)
       end
 
       if ctr ~= nil then

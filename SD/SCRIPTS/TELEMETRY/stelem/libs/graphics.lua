@@ -264,7 +264,7 @@ local function drawSmallNumbers(x, y, number)
         { 1, 1, 0,  }
     },
     {
-        { 1, 1, 0,  },
+        { 1, 0, 0,  },
         { 1, 0, 0,  },
         { 1, 1, 0,  },
         { 1, 1, 0,  }
@@ -287,15 +287,27 @@ local function drawSmallNumbers(x, y, number)
         { 1, 1, 0,  },
         { 0, 1, 0,  },
         { 0, 1, 0,  },
+    },
+    -- colon
+    { 
+      { 0,0},
+      { 1,0 },
+      { 0,0 },
+      { 1,0 }
     }
   }
+
   local str = tostring(number)
-  for t = 1, #str
-  do
-    local alg = tonumber(string.sub(str, t, t)) + 1
-    local rec = #numbers[alg][1]
-    drawPattern(x, y, numbers[alg])
-    x = x + rec
+  if str == ":" then
+    drawPattern(x, y, numbers[11])
+  else
+    for t = 1, #str
+    do
+      local alg = tonumber(string.sub(str, t, t)) + 1
+      local rec = #numbers[alg][1]
+      drawPattern(x, y, numbers[alg])
+      x = x + rec
+    end
   end
 end
 
