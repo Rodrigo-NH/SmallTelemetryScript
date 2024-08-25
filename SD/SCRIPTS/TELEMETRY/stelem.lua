@@ -1,53 +1,142 @@
-local shared = { }
-local splashscreen = "/SCRIPTS/TELEMETRY/stelem/splash.lua"
-shared.Mapscreen = "/SCRIPTS/TELEMETRY/stelem/sc_map.lua"
-shared.Configmenu = "/SCRIPTS/TELEMETRY/stelem/sc_conf.lua"
-shared.configFile = "/SCRIPTS/TELEMETRY/stelem/settings.cfg"
-local messagesLogDir = "/SCRIPTS/TELEMETRY/stelem/logs/"
-local soundsDir = "/SOUNDS/en/SCRIPTS/STELEM/"
-shared.missionFile = ""
+local shared = {}
 
+-- local debugm = "txd"
+local debugm = "bt"
+shared.rootDir = "/SCRIPTS/TELEMETRY/stelem/"
+shared.Mapscreen = shared.rootDir .. "sc_map.lua"
+if fstat(shared.rootDir .. "sc_map.luac") == nil then
+	loadScript(shared.Mapscreen, debugm)
+end
+shared.Mapconf = shared.rootDir .. "sc_mapc.lua"
+shared.Configmenu = shared.rootDir .. "sc_conf.lua"
+shared.configFile = shared.rootDir .. "settings.cfg"
+local messagesLogDir = shared.rootDir .. "logs/"
+shared.soundsDir = "/SOUNDS/en/SCRIPTS/STELEM/"
+shared.libsDir = shared.rootDir .. "libs/"
+shared.missionDir = shared.rootDir .. "missions"
+shared.isColor = false
+
+shared.missionFile = ""
+shared.maxmem = 0
+local telem = nil
+local firstRun = true
+
+-- shared.isMapLoaded = false
+shared.goMap = false
+shared.goConf = false
+shared.mapScreen = false
+shared.mapoptionstable = {}
+shared.maphud = true
+shared.maphudItems = {}
+shared.mapState = { 0 }
+-- shared.mapState
+-- 1 - zoomscale
+-- 2 - ucommand
+-- 3 - usroptlist
+-- 4 - ucommand2
+-- 5 - usroptlist2
+shared.mapSource = false
+shared.hdgOffset = 0
+
+shared.tcounter = 0
 -- To be populated in ini() accordingly user selection screen size
-shared.Screens = { }
-shared.screenItems = { }
-shared.screensFile = nil
-shared.screenW = nil
-shared.screenH = nil
-shared.pixelSize = nil -- millimeters
+shared.Screens = {}
+shared.screenItems = {}
+shared.screensFile = ""
+shared.screenW = 0
+shared.screenH = 0
+shared.pixelSize = 0 -- millimeters
+shared.coords = {}
+
+shared.gotonav = nil
+shared.gotoangle = 0
+shared.gotodist = 0
+shared.hdgVel = 0
+shared.hdgVeltimer = 0
+shared.hdgLastPos = { 0, 0 }
+shared.autoGotoTimer = 0
+shared.gotonavTimer = 0
+shared.heartBeatChecker = 0
+
+shared.tempTimer = getTime() + 500
+shared.tempTimer2 = 0
+shared.tempcounter = 0
 
 -- All config options
+local hdgtim = "Hdg vel. time (sec)"
+local hdgtim2 = "Heading method"
+local hdgtim3 = "Miss. Auto GoTo"
+local hdgtim4 = "Hdg vel. min. distance"
+local hdgtim5 = "Hdg vel debug sound"
+local hdgtyaw = "Yaw"
+local hdgtvelocity = "Velocity"
+local hdgtmixed = "Mixed"
+local hdgttelemetry = "Telemet."
+-- local hdgsimul = "Simulate"
+local ons = "ON"
+local offs = "OFF"
+local falses = "False"
+local trues = "True"
 shared.MenuItems = {
-	{ "Cell voltage",    1, "False", "True" },
-	{ "Number of cells", 4, "1", "2", "3", "4", "5", "6", "7", "8" },
+	{ "Screen Size",     1, "128x64", "212x64", "480x272" },
+	{ "Msg Buffer size", 1, "9",      "18",     "24",     "48", "96", "192" },
+	{ "Cell voltage",    1, falses,   trues },
+	{ "Number of cells", 4, "1",      "2",      "3",      "4",  "5",  "6",  "7", "8" },
 	{ "Variometer clip val", 8, "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60",
 		"65", "70", "75", "80", "90", "100", "110", "120", "130", "140", "150", "160", "170", "180", "190", "200" },
-	{ "Att. indicator scale", 1, "90",      "100",     "110", "120", "130", "140", "150", "160", "170", "180" },
-	{ "Msg log",1, "False",   "True" },
-	{ "Sounds", 2, "False",   "True" },
-	{ "Splash Screen",2, "False",   "True" },
-	{ "Screen Size",1,"128x64","212x64" },
-	{ "Show WP numbers",1,"ON","OFF"},
-	{ "Show scale",1,"ON","OFF"}
+	{ "Att. indicator scale", 1, "1",   "0.8",      "0.6",   "0.4",     "0.3" },
+	{ "Msg log",              1, falses,  trues },
+	{ "Sounds",               2, falses,  trues },
+	{ "Show WP numbers",      1, ons,     offs },
+	{ "Show scale",           1, ons,     offs },
+	{ hdgtim3,                2, ons,     offs },
+	{ "Show Batt.Volt",       2, ons,     offs },
+	{ "Show Alt.",            2, ons,     offs },
+	{ "Show Home Alt.",       2, ons,     offs },
+	{ "Show RSSI",            2, ons,     offs },
+	{ "Show Nsat",            2, ons,     offs },
+	{ "Show Vspeed",          2, ons,     offs },
+	{ "Show Hspeed",          2, ons,     offs },
+	{ "Show Throt.",          2, ons,     offs },
+	{ "Show TXpow.",          2, ons,     offs },
+	{ "Show Batt%",           2, ons,     offs },
+	{ "DebMem",               2, ons,     offs },
+	-- { hdgsimul,             2, ons,     offs },
+	{ hdgtim2,                3, hdgtyaw,  hdgtvelocity, hdgtmixed, hdgttelemetry },
+	{ hdgtim4,                4, "0.1",  "1",        "2",     "3",       "5",   "8",   "10" },
+	{ hdgtim,                 3, "0.5",  "1",        "2",     "3",       "4",   "5",   "6" },
+	{ hdgtim5,                2, ons,    offs },
+	{ "CRSF Telemetry",       1, offs,   ons },
+	{ "Origin set Upd. Home", 2, ons,    offs },
+	-- Telemetry Mapping
+	{ "RSS",                  1, "1RSS" },
+	{ "TxPower",              1, "TPWR" },
+	{ "GPS position",         1, "GPS" },
+	{ "GPS speed",            1, "GSpd" },
+	{ "Heading",              1, "Hdg" },
+	{ "Altitude",             1, "Alt" },
+	{ "Number of sats",       1, "Sats" },
+	{ "RX batt. volt.",       1, "RxBt" },
+	{ "Current",              1, "Curr" },
+	{ "Batt.(%)",             1, "Bat%" },
+	{ "Pitch",                1, "Ptch" },
+	{ "Roll",                 1, "Roll" },
+	{ "Yaw",                  1, "Yaw" },
+	{ "Flight Mode",          1, "FM" },
 }
 
-local mavSeverity = {
-	[0] = "EMR", -- Emergency - System is unusable
-	[1] = "ALR", -- Alert - Should be corrected immediately
-	[2] = "CRT", -- Critical - Critical conditions
-	[3] = "ERR", -- Error - Error conditions
-	[4] = "WRN", -- Warning - May indicate that an error will occur if action is not taken.
-	[5] = "NOT", -- Notice - Events that are unusual,but not error conditions.
-	[6] = "INF", -- Informational - Normal operational messages that require no action.
-	[7] = "DBG", -- Debug - Information useful to developers for debugging the application.
-}
+
+-- local hdgmeth = shared.GetConfig("Heading method")
+-- local hdgtimer = tonumber(shared.GetConfig(hdgtim))
+-- local hdgdistance = tonumber(shared.GetConfig(hdgtim4))
+-- local hgddebugsound = shared.GetConfig(hdgtim5)
+
 
 shared.Heartbeat = 0
 shared.CurrentScreen = 1
-local splashactive = true
-local telecount = { 0, 0, false }
 
-shared.tel = { }
-shared.tel.flightMode = 0
+shared.tel = {}
+shared.tel.flightMode = ""
 shared.tel.roll = 0
 shared.tel.pitch = 0
 shared.tel.yaw = 0
@@ -55,12 +144,14 @@ shared.tel.range = 0
 shared.tel.throttle = 0
 shared.tel.numSats = 0
 shared.tel.gpsHdopC = 0
-shared.tel.gpsAlt = 0
+-- shared.tel.gpsAlt = 0
 shared.tel.batt1volt = 0
 shared.tel.homeAlt = 0
+shared.tel.alt = 0
 shared.tel.batt1current = 0
 shared.tel.batt1mah = 0
-shared.tel.baroAlt = 0
+shared.tel.battpercent = 0
+-- shared.tel.baroAlt = 0
 shared.tel.homeDist = 0
 shared.tel.homeAngle = 0
 shared.tel.vSpeed = 0
@@ -73,169 +164,56 @@ shared.tel.wpXTError = 0
 shared.tel.wpBearing = 0
 shared.tel.lat = 0
 shared.tel.lon = 0
+shared.tel.txpower = 0
+shared.tel.hSpeed = 0
+shared.tel.hdg = 0
 
 -- Last know home (origin set) location lat/long
 shared.homeLocation = { 0, 0 }
-
 shared.Messages = {}
 shared.Alertmessages = { "", "" }
-shared.MessagesIndex = 1
-local msglogfilename = ""
-local msglogfile = nil
+shared.MessagesIndex = 0
+shared.scrollIndex = 1
+shared.MessagesBuffSize = 1
+shared.msglogfilename = ""
+shared.msglogfile = ""
 
-local function processTelemetry(appId, value, now)
-	if appId == 0x5006 then
-		shared.tel.roll = (math.min(bit32.extract(value, 0, 11), 1800) - 900) * 0.2
-		shared.tel.pitch = (math.min(bit32.extract(value, 11, 10), 900) - 450) * 0.2
-		shared.tel.range = bit32.extract(value, 22, 10) * (10 ^ bit32.extract(value, 21, 1)) -- cm
-	elseif appId == 0x5005 then                                                   -- VELANDYAW
-		shared.tel.yaw = bit32.extract(value, 17, 11) * 0.2
-		shared.tel.vSpeed = bit32.extract(value, 1, 7) * (10 ^ bit32.extract(value, 0, 1)) *
-			(bit32.extract(value, 8, 1) == 1 and -1 or 1)
-	elseif appId == 0x5001 then -- AP STATUS
-		shared.tel.flightMode = bit32.extract(value, 0, 5)
-		shared.tel.simpleMode = bit32.extract(value, 5, 2)
-		shared.tel.landComplete = bit32.extract(value, 7, 1)
-		shared.tel.statusArmed = bit32.extract(value, 8, 1)
-		shared.tel.battFailsafe = bit32.extract(value, 9, 1)
-		shared.tel.ekfFailsafe = bit32.extract(value, 10, 2)
-		shared.tel.failsafe = bit32.extract(value, 12, 1)
-		shared.tel.fencePresent = bit32.extract(value, 13, 1)
-		shared.tel.fenceBreached = shared.tel.fencePresent == 1 and bit32.extract(value, 14, 1) or 0 -- we ignore fence breach if fence is disabled
-		shared.tel.throttle = math.floor(0.5 +
-			(bit32.extract(value, 19, 6) * (bit32.extract(value, 25, 1) == 1 and -1 or 1) * 1.58)) -- signed throttle [-63,63] -> [-100,100]
-																							  -- IMU temperature: 0 means temp =< 19°,63 means temp => 82°
-		shared.tel.imuTemp = bit32.extract(value, 26, 6) + 19                                  -- C°
-		shared.tel.statusArmed = bit32.extract(value,8,1)
-	elseif appId == 0x5002 then                                                               -- GPS STATUS
-		shared.tel.numSats = bit32.extract(value, 0, 4)
-		shared.tel.gpsHdopC = bit32.extract(value, 7, 7) * (10 ^ bit32.extract(value, 6, 1))   -- dm
-		shared.tel.gpsAlt = bit32.extract(value, 24, 7) * (10 ^ bit32.extract(value, 22, 2)) *
-			(bit32.extract(value, 31, 1) == 1 and -1 or 1)                                    -- dm
-		shared.tel.gpsStatus = bit32.extract(value, 4, 2) + bit32.extract(value, 14, 2)
-	elseif appId == 0x5003 then                                                               -- BATT
-		shared.tel.batt1volt = bit32.extract(value, 0, 9) / 10                                 -- dV
-			local cellvolt = shared.GetConfig("Cell voltage")
-			local dividefactor = 1
-			if cellvolt == "True" then
-				dividefactor = tonumber(shared.GetConfig("Number of cells"))
-			end
-			shared.tel.batt1volt = shared.tel.batt1volt / dividefactor
-		shared.tel.batt1current = (bit32.extract(value, 10, 7) * (10 ^ bit32.extract(value, 9, 1))) / 10 --dA
-		shared.tel.batt1mah = bit32.extract(value, 17, 15)
-	elseif appId == 0x500D then -- WAYPOINTS @1Hz
-		shared.tel.wpNumber = bit32.extract(value,0,11) -- wp index
-		shared.tel.wpDistance = bit32.extract(value,13,10) * (10^bit32.extract(value,11,2)) -- meters
-		shared.tel.wpBearing = bit32.extract(value, 23,  7) * 3
-	elseif appId == 0x5004 then                                                               -- HOME
-		shared.tel.homeAlt = bit32.extract(value, 14, 10) * (10 ^ bit32.extract(value, 12, 2)) * 0.1 *
-			(bit32.extract(value, 24, 1) == 1 and -1 or 1)                                    --m
-		shared.tel.homeDist = bit32.extract(value, 2, 10) * (10 ^ bit32.extract(value, 0, 2))
-		shared.tel.homeAngle = bit32.extract(value, 25, 7) * 3
-	elseif appId == 0x50F2 then -- VFR
-		shared.tel.baroAlt = bit32.extract(value, 17, 10) * (10 ^ bit32.extract(value, 15, 2)) * 0.1 *
-			(bit32.extract(value, 27, 1) == 1 and -1 or 1)	
-	end
-
-	shared.tel.RSSI = getRSSI()
-	local gpsId  = getFieldInfo("GPS") and getFieldInfo("GPS").id or nil;
-	if getValue(gpsId) ~= 0 then
-		local gps = getValue(gpsId)
-		shared.tel.lat = gps.lat
-		shared.tel.lon = gps.lon
-	end
-
+function shared.LoadLua(filename)
+	local sc = loadScript(filename, debugm)
+	return sc()
 end
 
-local function crossfirePop()
-	local now = getTime()
-	local command, data = crossfireTelemetryPop()
-	if (command == 0x80 or command == 0x7F) and data ~= nil then
-		shared.Heartbeat = shared.Heartbeat + 1
-		if shared.Heartbeat > 2 then
-			shared.Heartbeat = 0
-		end
-		if #data >= 7 and data[1] == 0xF0 then
-			local app_id = bit32.lshift(data[3], 8) + data[2]
-			local value = bit32.lshift(data[7], 24) + bit32.lshift(data[6], 16) + bit32.lshift(data[5], 8) + data[4]
-			return 0x00, 0x10, app_id, value
-		elseif #data > 4 and data[1] == 0xF1 then
-			local severity = data[2]
-			local tmessage = ""
-			for i = 3, #data
-			do
-				if data[i] ~= 0 then
-					tmessage = tmessage .. string.char(data[i])
-				end
-			end
-			shared.Messages[shared.MessagesIndex] = tmessage
-			shared.MessagesIndex = shared.MessagesIndex + 1
-
-			if shared.MessagesIndex == 10 then
-				local templist = {}
-				for j = 1, 8
-				do
-					templist[j] = shared.Messages[j + 1]
-				end
-				shared.Messages = templist
-				shared.MessagesIndex = 9
-			end
-
-			if severity < 6 then
-				shared.Alertmessages[2] = shared.Alertmessages[1]
-				shared.Alertmessages[1] = tmessage
-			end
-
-			if msglogfilename ~= "" then
-				io.write(msglogfile, mavSeverity[severity] .. "= " .. tmessage .. "\n")
-			end
-
-			local soundfile = ""
-			if string.match(tmessage, "origin set") then
-				shared.homeLocation = {shared.tel.lat, shared.tel.lon}
-				soundfile = "orginSet.wav"				
-			end				
-			
-			if severity < 6 and severity > 3 then
-				soundfile = "alarm2.wav"
-			elseif severity < 4 then
-				soundfile = "alarm1.wav"
-			end
-
-			if string.match(tmessage, "GPS Glitch") then
-				soundfile = "glitch.wav"
-			elseif string.match(tmessage, "Glitch cleared") then
-				soundfile = "gCleared.wav"
-			end
-			
-			local playsounds = shared.GetConfig("Sounds")
-			if playsounds == "True" then
-				playFile(soundsDir .. soundfile)
-			end
-
-		elseif #data >= 8 and data[1] == 0xF2 then
-			-- passthrough array
-			local app_id, value
-			for i = 0, math.min(data[2] - 1, 9)
-			do
-				app_id = bit32.lshift(data[4 + (6 * i)], 8) + data[3 + (6 * i)]
-				value = bit32.lshift(data[8 + (6 * i)], 24) + bit32.lshift(data[7 + (6 * i)], 16) +
-					bit32.lshift(data[6 + (6 * i)], 8) + data[5 + (6 * i)]
-				processTelemetry(app_id, value, now)
+local setts = shared.LoadLua(shared.libsDir .. "setmgm.lua")
+local function compall()
+	local luadirs = {
+		shared.rootDir .. "libs",
+		shared.rootDir .. "128x64",
+		shared.rootDir .. "212x64",
+		shared.rootDir,
+	}
+	for t = 1, #luadirs
+	do
+		local flist = setts.listFiles(luadirs[t], ".lua")
+		for f = 1, #flist
+		do
+			local fullpath = luadirs[t] .. "/" .. flist[f]
+			local fpc = fullpath .. "c"
+			if fstat(fpc) == nil then
+				loadScript(fullpath, debugm)
 			end
 		end
 	end
 end
+compall()
 
-function shared.MessagesLog()
-	local msgconf = shared.GetConfig("Msg log")
-	if msgconf == "True" then
-		local dt = getDateTime()
-		msglogfilename = dt["sec"] ..
-			"_" ..
-			dt["min"] ..
-			"_" .. dt["hour"] .. "_" .. dt["day"] .. "_" .. dt["mon"] .. "_" .. dt["year"] .. "_messageLog.txt"
-		msglogfile = io.open(messagesLogDir .. msglogfilename, "w")
+function shared.LoadScreen(screenref)
+	local chunk = nil
+	if #shared.Screens == 0 then
+		screenref = shared.Configmenu
+	end
+	chunk = loadScript(screenref, debugm)
+	if chunk ~= nil then
+		chunk(shared)
 	end
 end
 
@@ -243,8 +221,8 @@ function shared.GetConfig(confname)
 	local confnumber = 0
 	for cf = 1, #shared.MenuItems
 	do
-		local to = string.upper(shared.MenuItems[cf][1])
-		if to == string.upper(confname) then
+		local to = shared.MenuItems[cf][1]
+		if to == confname then
 			confnumber = cf
 		end
 	end
@@ -252,179 +230,173 @@ function shared.GetConfig(confname)
 	return shared.MenuItems[confnumber][seloption + 2]
 end
 
-function shared.getSettingsSubSet(localCopy, list)
-	local subs = {}
-	for e = 1, #list
-	do
-		local elem = list[e]
-		for set = 1, #localCopy
-		do
-			if string.upper(localCopy[set][1]) == string.upper(elem) then
-				subs[#subs + 1] = localCopy[set]
+local function MessagesLog()
+	local msgconf = shared.GetConfig("Msg log")
+	if msgconf == "True" then
+		local dt = getDateTime()
+		local msglogfilename = dt["sec"] ..
+			"_" ..
+			dt["min"] ..
+			"_" .. dt["hour"] .. "_" .. dt["day"] .. "_" .. dt["mon"] .. "_" .. dt["year"] .. "_messageLog.txt"
+		shared.msglogfilename = io.open(messagesLogDir .. msglogfilename, "w")
+	end
+end
+
+function shared.nbformat(input, decplaces)
+	return string.format("%." .. tostring(decplaces) .. "f", tostring(input))
+end
+
+local function hdgcalc(hdgmeth)
+	local tempvel = 0
+	local hdgdistance = tonumber(shared.GetConfig(hdgtim4))
+	local hgddebugsound = shared.GetConfig(hdgtim5)
+
+	if shared.hdgLastPos[1] == 0 and shared.tel.lat ~= 0 then
+		shared.hdgLastPos[1] = shared.tel.lat
+		shared.hdgLastPos[2] = shared.tel.lon
+	elseif shared.tel.lat ~= 0 then
+		local t1 = shared.geo.translatePoint(shared.hdgLastPos[1], shared.hdgLastPos[2], 500, 500)
+		local t2 = shared.geo.translatePoint(shared.tel.lat, shared.tel.lon, 500, 500)
+		local dt = shared.geo.distPoints(shared.hdgLastPos[1], shared.hdgLastPos[2], shared.tel.lat, shared.tel.lon)
+		if dt > hdgdistance then
+			if hgddebugsound == ons then
+				playFile(shared.soundsDir .. "bo.wav")
 			end
-		end		
-	end
-	return subs
-end
-
-function shared.SaveSettings(configFile, localCopy)
-	file = io.open(configFile, "w")
-	for i = 1, #localCopy
-	do
-		local confline = localCopy[i]
-		for j = 1, #confline
-		do
-			io.write(file, confline[j], ",")
+			tempvel = shared.geo.anglePointsPlane(t1[1], t1[2], t2[1], t2[2])
+			shared.hdgLastPos[1] = shared.tel.lat
+			shared.hdgLastPos[2] = shared.tel.lon
 		end
-		io.write(file, "\n")
-	end
-	io.close(file)
-end
-
-function shared.LoadSettings(configFile, localCopy)
-	local cfg = io.open(configFile, "r")
-	if cfg ~= nil then
-		-- localCopy = { }
-		local str = io.read(cfg, 500)
-		io.close(cfg)
-		local archline = 1
-		for strout in string.gmatch(str, "([^" .. "%\n" .. "]+)") do
-			local ctr = 1
-			local cfgline = {}
-			for tentry in string.gmatch(strout, '([^,]+)') do
-				cfgline[ctr] = tentry
-				ctr = ctr + 1
-			end
-			localCopy[archline] = cfgline
-			archline = archline + 1
-		end
-	else
-		shared.SaveSettings(shared.configFile, shared.MenuItems)
-	end
-end
-
-function shared.LoadScreen(screenref)
-	local chunk = nil
-	-- collectgarbage("collect")
-	if #shared.Screens == 0 then
-		chunk = loadScript(shared.Configmenu)
-	else
-		chunk = loadScript(screenref)
-	end
-	
-	chunk(shared)
-end
-
-function shared.CycleScreen(delta)
-	shared.CurrentScreen = shared.CurrentScreen + delta
-	if shared.CurrentScreen > #shared.Screens then
-		shared.CurrentScreen = 1
-	elseif shared.CurrentScreen < 1 then
-		shared.CurrentScreen = #shared.Screens
-	end
-	shared.LoadScreen(shared.Screens[shared.CurrentScreen])
-end
-
-function shared.LoadLua(filename)
-	local success, f = pcall(loadScript, filename)
-	if success then
-		local ret = f()
-		return ret
-	else
-		return nil
-	end
-end
-
-function shared.loadScreens()
-	local screenSize = shared.GetConfig("Screen Size")
-	print("SIZE: " .. screenSize)
-	local sz = shared.GetConfig("Screen Size")
-	if sz == "128x64" then
-		shared.screenW = 128
-		shared.screenH = 64
-		shared.pixelSize = 0.405 -- TX12 screen
-	elseif sz == "212x64" then
-		shared.screenW = 212
-		shared.screenH = 0.405 -- ???
-	end
-	local screensDir = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize
-	shared.screensFile = "/SCRIPTS/TELEMETRY/stelem/" .. screenSize .. "/scsList.cfg"
-	print("DIR: " .. shared.screensFile)
-	shared.screenItems = { }
-	shared.LoadSettings(shared.screensFile, shared.screenItems)
-	shared.Screens = { }
-	local act = 1
-	for t=1, #shared.screenItems
-	do
-		if shared.screenItems[t][2] == "1" then
-			shared.Screens[act] = screensDir .. "/" .. shared.screenItems[t][1] .. ".lua"
-			act = act + 1
-		end		
-	end	
-end
-
-function shared.runSplash()
-	if shared.GetConfig("Splash Screen") == "True" and splashactive then
-		splashactive = false
-		shared.LoadScreen(splashscreen)
-	else
-		splashactive = false
 	end
 
+	if tempvel == 0 and hdgmeth == hdgtmixed then
+		tempvel = shared.tel.yaw + shared.hdgOffset
+	elseif tempvel == 0 and hdgmeth == hdgtvelocity then
+		tempvel = shared.hdgVel
+	end
+	return tempvel
 end
 
-function shared.defaultActions(event)
-	telecount[3] = true
-	if event == 102 and telecount[1] > 10 then
-		shared.LoadScreen(shared.Mapscreen)
-		telecount[1] = 0
-	elseif event == EVT_VIRTUAL_NEXT or event == 99 then
-		shared.CycleScreen(1)
-	elseif event == EVT_VIRTUAL_PREV or event == 98 then
-		shared.CycleScreen(-1)
-	elseif event == EVT_VIRTUAL_ENTER then
-		shared.LoadScreen(shared.Configmenu)
-	end
-end
+-- SIMULATE
+-- local function telefun(message)
+-- 	shared.MessagesIndex = shared.MessagesIndex + 1
+-- 	shared.Messages[shared.MessagesIndex] = message
+-- 	if shared.scrollIndex > 1 then
+-- 		shared.scrollIndex = shared.scrollIndex + 1
+-- 	end
+-- 	if shared.MessagesIndex == shared.MessagesBuffSize + 1 then
+-- 		for j = 1, shared.MessagesBuffSize
+-- 		do
+-- 			shared.Messages[j] = shared.Messages[j+1]
+-- 		end
+-- 		shared.Messages[#shared.Messages] = nil
+-- 		shared.MessagesIndex = shared.MessagesBuffSize				
+-- 	end
+-- end
+-- SIMULATE
 
 local function background(event)
-	local success, sensor_id, frame_id, data_id, value = pcall(crossfirePop)
-	if success and frame_id == 0x10 then
-		local now = getTime()
-		processTelemetry(data_id, value, now)
+	-- SIMULATE
+	-- if  getTime() - shared.tempTimer > 107 then
+	-- 	shared.tempTimer = getTime()
+	-- 	if firstRun then
+	-- 	shared.tel.lat = -49.1855117
+	-- 	shared.tel.lon = 70.3391770
+	-- 	firstRun = false
+	-- 	end
+	-- 	-- shared.tempTimer2 = shared.tempTimer2 + 1
+	-- 	-- shared.tel.homeAlt = shared.tel.homeAlt + 1
+	-- 	-- telefun("Ardupilot Message " .. tostring(shared.tempTimer2))
+	-- 	shared.tel.lat =  shared.tel.lat - 0.00002
+	-- 	shared.tel.lon =  shared.tel.lon  - 0.0002
+	-- end
+	-- SIMULATE
+	
+		-- shared.telekeyDebounce = shared.telekeyDebounce + 1
+		-- if shared.telekeyDebounce > 5 then
+		-- 	shared.telekeyDebounce = 5
+		-- end
+
+	
+	-- print(shared.telekeyDebounce)
+
+	if getTime() - shared.gotonavTimer > 51 and shared.gotonav ~= nil and shared.mapSource == false then
+		shared.gotonavTimer = getTime()
+		shared.geo.translateData(shared, 500, 0, 500, 0)
+		shared.geo.gotonav(shared, false)
 	end
 
-	if telecount[3] then -- TELE key debouncer
-		telecount[3] = false
-		telecount[1] = telecount[1] + 1
-	else
-		telecount[2] = telecount[2] + 1
-		if telecount[2] > 20 then
-			telecount[2] = 0
-			telecount[1] = 0
-		end		
+	local hdgmeth = shared.GetConfig(hdgtim2)
+	local hdgtimer = tonumber(shared.GetConfig(hdgtim))
+
+	if hdgmeth == hdgtyaw then
+		shared.hdgVel = shared.tel.yaw + shared.hdgOffset
+	elseif hdgmeth == hdgttelemetry then
+		shared.hdgVel = shared.tel.hdg
+	elseif getTime() - shared.hdgVeltimer > hdgtimer * 93 then
+		shared.hdgVeltimer = getTime()
+		shared.hdgVel = hdgcalc(hdgmeth)
 	end
+
+	if shared.GetConfig(hdgtim3) == ons then
+		if getTime() - shared.autoGotoTimer > 57 then
+			shared.autoGotoTimer = getTime()
+			if shared.tel.wpNumber ~= 0 and #shared.coords - 2 >= shared.tel.wpNumber + 1
+				and shared.coords[shared.tel.wpNumber + 1][2] ~= 0 then
+				shared.mapState[4] = "Go To"
+				shared.mapState[5] = { "", shared.tel.wpNumber }
+				shared.gotonav = shared.tel.wpNumber
+			end
+		end
+	end
+	telem.getTele(shared)
 end
 
 local function init()
-	shared.Frame = shared.LoadLua("/SCRIPTS/TELEMETRY/stelem/copter.lua")
-	shared.LoadSettings(shared.configFile, shared.MenuItems)
-	shared.loadScreens()	
-	shared.MessagesLog()
-	telecount[1] = 0
-	telecount[2] = getTime()
-	shared.LoadScreen(shared.Configmenu)
-	for s=1, #shared.Screens
-	do
-		shared.LoadScreen(shared.Screens[s])
+	-- if shared.GetConfig(hdgsimul) == ons then
+		-- shared.tel.lat = -49.1855117
+		-- shared.tel.lon = 70.3391770
+	-- end
+	Batt1volt = 23
+	shared.geo = shared.LoadLua(shared.libsDir .. "geo.lua")
+	setts.LoadSettings(shared.configFile, shared.MenuItems, shared)
+	shared.MessagesBuffSize = tonumber(shared.GetConfig("Msg Buffer size"))
+	setts.loadScreens(shared.GetConfig("Screen Size"), shared)
+	MessagesLog()
+	-- if firstRun then
+	if shared.GetConfig("CRSF Telemetry") == ons then
+		telem = shared.LoadLua(shared.libsDir .. "crsf.lua")
+	else
+		telem = shared.LoadLua(shared.libsDir .. "dtele.lua")
 	end
-	shared.LoadScreen(shared.Mapscreen)
-	shared.LoadScreen(shared.Screens[1])
+		-- firstRun = false
+	-- end
+	-- shared.goConf = true
+	shared.LoadScreen(shared.libsDir .. "wtroom.lua")
+	-- shared.LoadScreen(shared.Configmenu)
+	-- shared.LoadScreen(shared.Screens[1])
+end
+
+local function getWidget(LCD_W, LCD_H)
+	if LCD_W > 212 then
+		shared.isColor = true
+		shared.screenW = LCD_W
+		shared.screenH = LCD_H
+	end
+	local sc = tostring(LCD_W) .. "x" .. tostring(LCD_H)
+	print(sc)
+	if sc == "480x272" then
+		setts.LoadSettings(shared.configFile, shared.MenuItems, shared)
+		shared.MenuItems[1][2] = 3
+		if tonumber(shared.GetConfig("Msg Buffer size")) < 24 then
+			shared.MenuItems[2][2] = 4
+		end
+		setts.SaveSettings(shared.configFile, shared.MenuItems)
+	end
+	init()
 end
 
 local function run(event)
-	shared.runSplash()
 	shared.run(event)
 end
 
-return { run = run, init = init, background=background }
+return { run = run, init = init, background = background, getWidget = getWidget }

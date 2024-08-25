@@ -1,56 +1,37 @@
-This is a spin-off of **Yaapu Telemetry Script and Widget** aimed to low capacity (processor/ram) radios using Ardupilot's CRSF passthrough. Target screen is 128x64 but can be explanded. Target radio is TX12 but may work with other radios. Target system is EdgeTX but may work in OpenTX. Target vehicle is copter. Script is functional but this is a WIP.   
+This still needs a appropriated readme.
+A overview can be viewed at https://www.youtube.com/watch?v=ua8J6P4wYl0
+
+This is a spin-off and total rewrite of **Yaapu Telemetry Script and Widget** aimed to low capacity (processor/ram) radios and color ones as well using Ardupilot's CRSF pass-through. Target system is EdgeTX. Target vehicle is copter. Aimed to ardupilot but can be used generically.
+
+Color radios works in EdgeTX emulation and I hope it will work in real radios. (I appreciate feedback on this!)
   
 
-
-## Rationale
-I had some important (blocking) issues trying to use Yaapu Telemetry on TX12. Tried to work around the issues (https://github.com/yaapu/FrskyTelemetryScript/issues/208) without success. Moreover, graphical elements seemed too 'laggy' with freezes the times it (somewhat) worked. It's probably that actual screens (and code as whole) are too heavy for a small radio like TX12.
-
 ## Installation
-Click 'Code' button then 'Download ZIP'. Enter (cd into) downloaded SD directory. Copy folders (SCRIPTS and SOUNDS) to the root of radio's SD card. Activate script in the radio.  
-**Attention**: radio will generate the compiled .luac files upon first activation. You may need to power cycle radio and activate script (TELE key) some times until all luac files are generated sucefully. (two power cycles for TX12)
+Click 'Code' button then 'Download ZIP'. Extract to some folder. Enter (cd into) downloaded SD directory. Copy folders (SCRIPTS and SOUNDS) to the root of radio's SD card (copy also WIDGETS if you have a color screen radio). Activate script in the radio.  
+**Attention**: radio will generate the compiled .luac files upon first activation. You may need to power cycle radio and activate script (TELE key) some times until all luac files are generated sucefully specially in low memory radios. There are a 'compiledluacs' directories with compiled luac's for TX12.
+**Attention**: I had many memory issues using older EDgeTX versions that was surpased after updating EdgeTX to 2.9.4
 
 ![Download](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/download.JPG)  
 
 
 ## Use
 
-Rottary switch to change normal screens. ENTER to enter main menu.
-
-Screen containing basic info and basic graphical elements (Attitude indicator; variometer; telemetry heartbeat and home arrow) 'h:' and 'y:' near home arrow are home distance and yaw respectively. Emergency to Error messages will be replicated at bottom of screen.  
-The graphical elements are coded in a way making easy to customize position and size. Can be used to develop new screens or for bigger screens.    
- 
-
-![Main screen](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/menu1.JPG)  
-
-Screen containing only messages in sequence. Pressing RTN from this screen will clear screen.  
-
-![Messages](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/menu2.JPG)  
-
-Some configuration options  
-Cell voltage: Display total battery voltage or cell voltage  
-Number of cells: To be able to calculate the above option correctly  
-Variometer clip val: The (V. speed) value that will make variometer cursor to clip top or bottom  
-Att. indicator scale: from 90 to 180. Larger values will smooth real angle. e.g. 180 will make the horizon line near the top/limit if drone is nose down.  
-Msg log: Will log messages to SD card in ../logs directory  
-Sounds: Enable/Disable script sounds. Actully just two sound files (relative to error messages) 
-
-
-
- ## Current
- Testing a map screen (WIP). You can enter map pressing TELE button. ENTER will load map specific options.   
- Put your Mission Planner TXT files under "\SCRIPTS\TELEMETRY\stelem\missions" and load from map screen.  
-
- 
-![Map test](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/mapwip.jpg)
+- Tele key to enter script.
+- RTN key to enter/exit menu options
+- Go to 'Telemetry settings -> CRSF Telemetry: ON' to use Yaapu Telemetry (this setting needs the script or radio to be restarted)
+- For color screens: Widget needs to run in fullscreen mode
+- Rotary switch to change screens. When you reach the Yaapu messages screen, behaviour changes to: rotary switch scrolls messages up/down; ENTER clear messages; RTN key first press reset scroll and 2nd press to return 1st screen (it just returns to 1st screen if you're not scrolling)
+- You can save ardupilot missions to 'SCRIPTS -> TELEMETRY -> stelem -> missions' to load and use in the map
+- Long press TELE key anytime to ENTER map (except when in messages screen). Use RTN key in map to enter map options etc
+- Includes a 'Velocity' mode for heading (Does not depend on the compass to work). Check 'Hdg vel.min distance' (threshold) and 'Hdg vel. time' and 'Hdg vel. debug sound' to fine tune this as you like.
+- Map options, including Goto/autoGoto options, works just like manual navigation in handheld GPSes. So, you can load ardupilot missions and use navigation even if not using ardupilot.
 
 
 ## Contribution
 
 If you test it and able to report: Open an issue reporting which radio (and system EdgeTX or OpenTX and version) you tested it and results so it can be added to the list. If you don't have a github account you can send me a direct message -> https://discuss.ardupilot.org/u/rodrigonh76/summary  
 
-![Screenshot1](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot1.jpg)  
-![Screenshot2](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot2.jpg)  
-![Screenshot3](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot3.jpg)  
-![Screenshot4](https://raw.githubusercontent.com/Rodrigo-NH/SmallTelemetryScript/master/readmeassets/shot4.jpg)  
-## Tested radios
-Radiomaster TX12 - EdgeTX 2.8
+
+## Tested radios/EdgeTX/ardupilot versions
+Radiomaster TX12 - EdgeTX 2.9.4 - Ardupilot 4.4.4
+
